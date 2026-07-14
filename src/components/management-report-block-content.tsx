@@ -51,6 +51,7 @@ import {
 } from "@/lib/ledger";
 import {
   getExpenseCategoriesSnapshot,
+  getExpensesSnapshot,
   getReceivablesSnapshot,
   subscribeMockStore,
 } from "@/lib/mock-data";
