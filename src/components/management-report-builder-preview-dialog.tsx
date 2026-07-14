@@ -105,21 +105,19 @@ const DocumentPageView = memo(function DocumentPageView({
   if ((page.kind === "report" || page.kind === "chart") && page.reportBlock) {
     const block = page.reportBlock;
     const title = blockDisplayTitle(block);
+    const rangeFrom = snapshot.rangeFrom ?? new Date(new Date().getFullYear(), 0, 1);
+    const rangeTo = snapshot.rangeTo ?? new Date();
     return (
       <div className="flex flex-col bg-white px-5 py-6 font-sans sm:px-6">
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {formatManagementReportCoverPeriod(
-            block.period,
-            snapshot.rangeFrom ?? new Date(new Date().getFullYear(), 0, 1),
-            snapshot.rangeTo ?? new Date(),
-          )}
+          {formatManagementReportCoverPeriod(block.period, rangeFrom, rangeTo)}
         </p>
         <div className="mt-4 overflow-visible">
           <ManagementReportBlockContent
             selectionId={block.selectionId}
-            rangeFrom={snapshot.rangeFrom}
-            rangeTo={snapshot.rangeTo}
+            rangeFrom={rangeFrom}
+            rangeTo={rangeTo}
             period={block.period}
           />
         </div>

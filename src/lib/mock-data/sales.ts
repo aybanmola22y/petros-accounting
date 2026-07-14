@@ -12,7 +12,8 @@ export type MockSalesTransaction = {
     | "Credit Note"
     | "Refund"
     | "Charge"
-    | "Journal Entry";
+    | "Journal Entry"
+    | "Change order";
   number: string;
   customer: string;
   memo: string;

@@ -87,11 +87,6 @@ export function ProductServiceEditFlow({
       setSellableForm(null);
       return;
     }
-    if (itemType === "bundle") {
-      setSellableForm(null);
-      setInventoryForm(null);
-      return;
-    }
     setSellableForm(productToSellableForm(product));
     setInventoryForm(null);
   }, [open, product, itemType]);
@@ -163,7 +158,12 @@ export function ProductServiceEditFlow({
         open={open}
         onOpenChange={onOpenChange}
         form={inventoryForm}
-        setForm={setInventoryForm}
+        setForm={(next) => {
+          setInventoryForm((prev) => {
+            if (prev === null) return prev;
+            return typeof next === "function" ? next(prev) : next;
+          });
+        }}
         typeIcon={typeIcon}
         typeTitle={typeTitle}
         onChangeType={() => undefined}
@@ -179,7 +179,12 @@ export function ProductServiceEditFlow({
         open={open}
         onOpenChange={onOpenChange}
         form={sellableForm}
-        setForm={setSellableForm}
+        setForm={(next) => {
+          setSellableForm((prev) => {
+            if (prev === null) return prev;
+            return typeof next === "function" ? next(prev) : next;
+          });
+        }}
         typeTitle={typeTitle}
         typeIcon={typeIcon}
         onChangeType={() => undefined}

@@ -185,7 +185,7 @@ export function buildDisplayInvoiceList(
 
 /** Counts from real invoices only (matches pipeline / summary cards). */
 export function countInvoicesByStatus(base: MockInvoice[]) {
-  const rows = base.map(mockInvoiceToViewRow);
+  const rows = base.map((invoice) => mockInvoiceToViewRow(invoice));
   return {
     overdue: rows.filter((r) => r.status.kind === "overdue").length,
     open: rows.filter((r) => r.status.kind === "open").length,

@@ -133,7 +133,10 @@ export function billListDateRange(
     return { from: startOfDay(from), to: asOf };
   }
 
-  const mapped = BILL_DATE_FILTER_TO_REPORT_PERIOD[filter as BillDateFilter];
+  const mapped =
+    BILL_DATE_FILTER_TO_REPORT_PERIOD[
+      filter as Exclude<BillDateFilter, "Custom" | "Last 14 Days">
+    ];
   if (mapped) {
     return resolveReportRange(mapped, asOf, asOf, asOf);
   }

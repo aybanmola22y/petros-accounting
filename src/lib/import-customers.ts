@@ -163,7 +163,7 @@ const LEAD_COLUMN_ALIASES = {
 
 export async function parseLeadsSpreadsheet(
   file: File,
-): Promise<ParseCustomersSpreadsheetResult & { rows: ParsedLeadImportRow[] }> {
+): Promise<Omit<ParseCustomersSpreadsheetResult, "rows"> & { rows: ParsedLeadImportRow[] }> {
   const { rows, sheetName } = await readSpreadsheetRows(file);
   if (rows.length === 0) throw new Error("The file is empty.");
 

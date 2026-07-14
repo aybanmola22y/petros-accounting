@@ -302,10 +302,10 @@ export function Invoices() {
       };
     }
 
-    const timeoutId = window.setTimeout(warmDialogs, 300);
+    const timeoutId = setTimeout(warmDialogs, 300);
     return () => {
       cancelled = true;
-      window.clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
     };
   }, []);
 

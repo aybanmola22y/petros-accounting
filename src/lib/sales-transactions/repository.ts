@@ -6,7 +6,6 @@ import {
 } from "./locations-repository";
 import { parseTransactionDate } from "@/lib/ledger/date-utils";
 import { toIsoDate } from "@/lib/report-date-utils";
-import type { MockSalesTransaction } from "@/lib/mock-data/sales";
 import {
   parsedSalesTransactionToInsert,
   salesTransactionRowToMock,

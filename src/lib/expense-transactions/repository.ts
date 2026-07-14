@@ -268,16 +268,18 @@ export async function repairImportedExpenseDateTimezoneIfNeeded(): Promise<numbe
       shifted.setDate(shifted.getDate() + 1);
 
       updatePromises.push(
-        supabase
-          .from(TABLE)
-          .update({
-            transaction_date: toIsoDate(shifted),
-            import_date_repaired: true,
-          })
-          .eq("id", row.id)
-          .then(({ error: updateError }) => {
-            if (updateError) throw new Error(updateError.message);
-          }),
+        Promise.resolve(
+          supabase
+            .from(TABLE)
+            .update({
+              transaction_date: toIsoDate(shifted),
+              import_date_repaired: true,
+            })
+            .eq("id", row.id)
+            .then(({ error: updateError }) => {
+              if (updateError) throw new Error(updateError.message);
+            }),
+        ),
       );
     }
 

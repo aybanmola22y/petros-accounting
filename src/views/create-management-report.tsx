@@ -807,7 +807,7 @@ export function CreateManagementReport() {
                           key={item.id}
                           value={item.id}
                           endAdornment={
-                            isReport ? (
+                            isReport && "categoryLabel" in item ? (
                               <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 {item.categoryLabel}
                               </span>

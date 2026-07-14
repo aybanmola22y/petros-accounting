@@ -42,7 +42,6 @@ export function productToInventoryForm(product: MockProductService): InventoryFo
     cost: product.cost != null ? String(product.cost) : "",
     showPurchasing: hasPurchase,
     purchaseDescription: "",
-    purchaseFromSupplier: hasPurchase,
   };
 }
 
