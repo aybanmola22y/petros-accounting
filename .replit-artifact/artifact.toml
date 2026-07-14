@@ -1,0 +1,26 @@
+kind = "web"
+previewPath = "/"
+title = "Accounting System"
+version = "1.0.0"
+id = "artifacts/accounting"
+router = "path"
+
+[[integratedSkills]]
+name = "nextjs"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24339
+
+[services.development]
+run = "pnpm --filter @workspace/accounting run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/accounting", "run", "build" ]
+serve = "next"
+
+[services.env]
+PORT = "24339"
+BASE_PATH = "/"

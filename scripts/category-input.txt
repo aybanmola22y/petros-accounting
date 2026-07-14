@@ -1,0 +1,255 @@
+﻿2066  - PHPExpense
+Accomodation expense  - PHPExpense
+Amortisation expense  - PHPExpense
+BIR Expense  - PHPExpense
+Bad debts  - PHPExpense
+Bank Withdrawal  - PHPExpense
+Bank charges  - PHPExpense
+Charitable Expenses  - PHPExpense
+Cleaning Supplies  - PHPExpense
+Commission Expense  - PHPExpense
+Commissions and fees  - PHPExpense
+Company Events  - PHPExpense
+Corporate Social Responsibility (CSR) Activities  - PHPExpense
+Cost of Deliverables  - PHPExpense
+     Direct Supplies  - PHPSub-account of Cost...
+Courier Expe  - PHPExpense
+Courier Expenses  - PHPExpense
+Direct Supplies  - PHPExpense
+Domain and Web Hosting Expenses  - PHPExpense
+Dues and subscriptions  - PHPExpense
+Elecrticity Bill  - PHPExpense
+Employee Benefits  - PHPExpense
+Employee ID  - PHPExpense
+Employee Meals  - PHPExpense
+Employee Salary  - PHPExpense
+Employee Salary & Benefits  - PHPExpense
+Employee Training and Seminars Expenses  - PHPExpense
+Employees Uniform  - PHPExpense
+Equipment Purchase  - PHPExpense
+Equipment rental  - PHPExpense
+Facebook Advertising Expense  - PHPExpense
+Fare Expense  - PHPExpense
+Food Expenses  - PHPExpense
+Fuel Expenses  - PHPExpense
+Globe Plan  - PHPExpense
+Income tax expense  - PHPExpense
+Installment Expenses  - PHPExpense
+Instructor Fee  - PHPExpense
+Insurance - Disability  - PHPExpense
+Insurance - General  - PHPExpense
+Insurance - Liability  - PHPExpense
+Interest expense  - PHPExpense
+Laundry Expenses  - PHPExpense
+Legal and professional fees  - PHPExpense
+Logistics Expenses  - PHPExpense
+Loss on discontinued operations, net of tax  - PHPExpense
+Management compensation  - PHPExpense
+Market Fare Expenses  - PHPExpense
+Marketing & Promotion Expenses  - PHPExpense
+Meals Expenses  - PHPExpense
+Meals and entertainment  - PHPExpense
+Member contributions  - PHPExpense
+Memberships Registration Fee  - PHPExpense
+Notarial Fee  - PHPExpense
+OPS Supplies  - PHPExpense
+Office Supplies  - PHPExpense
+Office expenses  - PHPExpense
+Official Business Travel  - PHPExpense
+     Accomodation Expenses-OBT  - PHPSub-account of Offic...
+     Travel expenses - general and admin expenses  - PHPSub-account of Offic...
+Other Expenses  - PHPExpense
+Other Types of Expenses-Advertising Expenses  - PHPExpense
+Other general and administrative expenses  - PHPExpense
+Other selling expenses  - PHPExpense
+PaL Delivery Expense  - PHPExpense
+Payment  - PHPExpense
+Payroll Expenses  - PHPExpense
+Percentage Expense  - PHPExpense
+Permits & Registrations Renewals  - PHPExpense
+Printing of Flyers  - PHPExpense
+Printing of manuals  - PHPExpense
+Purchases  - PHPExpense
+Refund  - PHPExpense
+Reimbursement Expenses  - PHPExpense
+Remmitance Charge  - PHPExpense
+Rent or lease payments  - PHPExpense
+Repairs and Maintenance  - PHPExpense
+RingBind Expense  - PHPExpense
+Sales Commision  - PHPExpense
+Services and Labors  - PHPExpense
+Shipping and delivery expense  - PHPExpense
+Stationery and printing  - PHPExpense
+Supplies  - PHPExpense
+T-Shirt Printing  - PHPExpense
+Telecommunication Expenses  - PHPExpense
+Telephone Expense  - PHPExpense
+Trainee Snacks  - PHPExpense
+Training Expenses- Site Inspection  - PHPExpense
+Training Expense  - PHPExpense
+Training Food Expenses  - PHPExpense
+Training Supplies  - PHPExpense
+Transportation Expenses  - PHPExpense
+Travel expenses - general and admin expenses  - PHPExpense
+Travel expenses - selling expenses  - PHPExpense
+Unapplied Cash Bill Payment Expense  - PHPExpense
+Uncategorised Expense  - PHPExpense
+Unidentified items  - PHPExpense
+Utilities  - PHPExpense
+Utility Expense  - PHPExpense
+Wage expenses  - PHPExpense
+Water Bill  - PHPExpense
+Water Delivery Expense  - PHPExpense
+delivery Fee  - PHPExpense
+medicines expense  - PHPExpense
+petty cash  - PHPExpense
+snacks  - PHPExpense
+Dividend income  - PHPOther Income
+IELTS Referral Commision  - PHPOther Income
+Interest income  - PHPOther Income
+Loss on disposal of assets  - PHPOther Income
+Other operating income (expenses)  - PHPOther Income
+Unrealised loss on securities, net of tax  - PHPOther Income
+Utility Expenses Share  - PHPOther Income
+Exchange Gain or Loss  - PHPOther Expense
+Other Expense  - PHPOther Expense
+Paypal Charges  - PHPOther Expense
+Reconciliation Discrepancies  - PHPOther Expense
+Withholding Tax  - PHPOther Expense
+Accrued liabilities  - PHPOther Current Liabil...
+Dividends payable  - PHPOther Current Liabil...
+Employee Reimbursement  - PHPOther Current Liabil...
+Engr. Harthwell Capistrano  - PHPOther Current Liabil...
+Income tax payable  - PHPOther Current Liabil...
+Loan Payable  - PHPOther Current Liabil...
+Payroll Clearing  - PHPOther Current Liabil...
+Payroll liabilities  - PHPOther Current Liabil...
+Short-term debit  - PHPOther Current Liabil...
+VAT Payable  - PHPOther Current Liabil...
+VAT Suspense  - PHPOther Current Liabil...
+Allowance for bad debt  - PHPOther Current Asset
+Available for sale assets (short-term)  - PHPOther Current Asset
+Cash Loan  - PHPOther Current Asset
+Employee Cash Advances  - PHPOther Current Asset
+Inventory  - PHPOther Current Asset
+Inventory Asset  - PHPOther Current Asset
+Loans To Officers  - PHPOther Current Asset
+Loans to Others  - PHPOther Current Asset
+Prepaid expenses  - PHPOther Current Asset
+Uncategorised Asset  - PHPOther Current Asset
+Undeposited Funds  - PHPOther Current Asset
+Assets held for sale  - PHPOther Asset
+Deferred tax assets  - PHPOther Asset
+Goodwill  - PHPOther Asset
+Intangibles  - PHPOther Asset
+Loans Receivable  - PHPOther Asset
+Long-Term Investments  - PHPOther Asset
+Accrued holiday payable  - PHPLong Term Liability
+Accrued non-current liabilities  - PHPLong Term Liability
+Liabilities related to assets held for sale  - PHPLong Term Liability
+Loans from Sir Harth  - PHPLong Term Liability
+Long-term debt  - PHPLong Term Liability
+Notes Payable  - PHPLong Term Liability
+Billable Expense Income  - PHPIncome
+Borrowed Cash  - PHPIncome
+Discounts given  - PHPIncome
+Revenue - General  - PHPIncome
+Sales  - PHPIncome
+Sales - retail  - PHPIncome
+Sales - wholesale  - PHPIncome
+Sales of Product Income  - PHPIncome
+Shipping Income  - PHPIncome
+Unapplied Cash Payment Income  - PHPIncome
+Uncategorised Income  - PHPIncome
+Accumulated depreciation on property, plant and equipment  - PHPFixed Asset
+Property, plant and equipment  - PHPFixed Asset
+     Other Income  - PHPSub-account of Prope...
+Dividend disbursed  - PHPEquity
+Equity in earnings of subsidiaries  - PHPEquity
+Opening Balance Equity  - PHPEquity
+Other comprehensive income  - PHPEquity
+Retained Earnings  - PHPEquity
+Share capital  - PHPEquity
+Default Credit Card  - PHPCredit Card
+Change in inventory - COS  - PHPCost Of Goods Sold
+Consultancy PF  - PHPCost Of Goods Sold
+Cost of sales  - PHPCost Of Goods Sold
+Courier Fees  - PHPCost Of Goods Sold
+Courier and Van Rental Fees COS  - PHPCost Of Goods Sold
+Direct labour - COS  - PHPCost Of Goods Sold
+Discounts given - COS  - PHPCost Of Goods Sold
+Equipment Rental-Training  - PHPCost Of Goods Sold
+Instructor Fees  - PHPCost Of Goods Sold
+Inventory Shrinkage  - PHPCost Of Goods Sold
+Materials - COS  - PHPCost Of Goods Sold
+Other - COS  - PHPCost Of Goods Sold
+Overhead - COS  - PHPCost Of Goods Sold
+Program Application Fees  - PHPCost Of Goods Sold
+Referral Fee  - PHPCost Of Goods Sold
+Room Accomodation  - PHPCost Of Goods Sold
+Subcontractors - COS  - PHPCost Of Goods Sold
+Trainer/Facilitator Fees  - PHPCost Of Goods Sold
+Training Meal Expenses  - PHPCost Of Goods Sold
+Training Supplies and Materials  - PHPCost Of Goods Sold
+Training Transportation Expenses  - PHPCost Of Goods Sold
+Venue Rental  - PHPCost Of Goods Sold
+3481-0038-99 BPI  - PHPBank
+3483 0576 19 Cash on Bank (BPI)  - PHPBank
+Cash on Bank (BDO)  - PHPBank
+Cash on hand  - PHPBank
+Cash on hand(Pangasinan Branch)  - PHPBank
+Cebu Branch  - PHPBank
+Cebu Branch-New  - PHPBank
+Charges fee  - PHPBank
+Coverage Allowance  - PHPBank
+Doubtful Accounts  - PHPBank
+Educational Assistance  - PHPBank
+Educational Benefits  - PHPBank
+Employee Meal Allowance  - PHPBank
+Equimpment Repair and Maintenace  - PHPBank
+Equipment  - PHPBank
+Equipment Maintenance  - PHPBank
+Equipment Repair and Maintenance  - PHPBank
+FLASH EXPRESS  - PHPBank
+Gcash Account  - PHPBank
+Gcash Charge  - PHPBank
+HCC  - PHPBank
+Health Benefits  - PHPBank
+House Keeping Maintenance Allowance  - PHPBank
+Hrad Expenses  - PHPBank
+Hse Training  - PHPBank
+Load  - PHPBank
+Loan Payment  - PHPBank
+Masteral Fee  - PHPBank
+Meal Allowance  - PHPBank
+Medical  - PHPBank
+Metro Manila Branch  - PHPBank
+Office Equipment  - PHPBank
+Office Maintenance  - PHPBank
+Office Repair and maintenance  - PHPBank
+Paypal Account  - PHPBank
+Penalties  - PHPBank
+Re-connection Fee  - PHPBank
+Roxas Branch-Old Account  - PHPBank
+Roxas City Branch  - PHPBank
+Salaries and Wages  - PHPBank
+Salary and Wage  - PHPBank
+Sales Return  - PHPBank
+Service Maintainance  - PHPBank
+Service Maintenance  - PHPBank
+Shipping Fee  - PHPBank
+Sponsorship  - PHPBank
+Surcharge  - PHPBank
+Training Equipment  - PHPBank
+Training Materials  - PHPBank
+Training Meal Allowance  - PHPBank
+Training Food Subsidies  - PHPBank
+Training Food Allowance  - PHPBank
+Training incentives  - PHPBank
+Travel Allowance  - PHPBank
+Accounts Receivable (A/R)  - PHPAccounts Receivable
+Bank deposit  - PHPAccounts Receivable
+Employee Loans  - PHPAccounts Receivable
+Loan Receivables  - PHPAccounts Receivable
+Accounts Payable (A/P)  - PHPAccounts Payable
+Accounts Payable (A/P)  - USDAccounts Payable

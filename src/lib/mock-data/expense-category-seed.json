@@ -1,0 +1,1261 @@
+[
+  {
+    "name": "2066",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Accomodation expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Amortisation expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "BIR Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Bad debts",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Bank Withdrawal",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Bank charges",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Charitable Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cleaning Supplies",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Commission Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Commissions and fees",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Company Events",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Corporate Social Responsibility (CSR) Activities",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cost of Deliverables",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Direct Supplies",
+    "accountType": "PHPSub-account of Cost...",
+    "isSubAccount": true,
+    "parentName": "Cost"
+  },
+  {
+    "name": "Courier Expe",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Courier Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Domain and Web Hosting Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Dues and subscriptions",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Elecrticity Bill",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Benefits",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee ID",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Meals",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Salary",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Salary & Benefits",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Training and Seminars Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employees Uniform",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equipment Purchase",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equipment rental",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Facebook Advertising Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Fare Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Food Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Fuel Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Globe Plan",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Income tax expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Installment Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Instructor Fee",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Insurance - Disability",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Insurance - General",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Insurance - Liability",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Interest expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Laundry Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Legal and professional fees",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Logistics Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loss on discontinued operations, net of tax",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Management compensation",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Market Fare Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Marketing & Promotion Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Meals Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Meals and entertainment",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Member contributions",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Memberships Registration Fee",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Notarial Fee",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "OPS Supplies",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Office Supplies",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Office expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Official Business Travel",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Accomodation Expenses-OBT",
+    "accountType": "PHPSub-account of Offic...",
+    "isSubAccount": true,
+    "parentName": "Offic"
+  },
+  {
+    "name": "Travel expenses - general and admin expenses",
+    "accountType": "PHPSub-account of Offic...",
+    "isSubAccount": true,
+    "parentName": "Offic"
+  },
+  {
+    "name": "Other Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other Types of Expenses-Advertising Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other general and administrative expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other selling expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "PaL Delivery Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Payment",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Payroll Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Percentage Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Permits & Registrations Renewals",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Printing of Flyers",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Printing of manuals",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Purchases",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Refund",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Reimbursement Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Remmitance Charge",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Rent or lease payments",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Repairs and Maintenance",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "RingBind Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Sales Commision",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Services and Labors",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Shipping and delivery expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Stationery and printing",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Supplies",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "T-Shirt Printing",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Telecommunication Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Telephone Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Trainee Snacks",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Expenses- Site Inspection",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Food Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Supplies",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Transportation Expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Travel expenses - selling expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Unapplied Cash Bill Payment Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Uncategorised Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Unidentified items",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Utilities",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Utility Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Wage expenses",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Water Bill",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Water Delivery Expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "delivery Fee",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "medicines expense",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "petty cash",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "snacks",
+    "accountType": "PHPExpense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Dividend income",
+    "accountType": "PHPOther Income",
+    "isSubAccount": false
+  },
+  {
+    "name": "IELTS Referral Commision",
+    "accountType": "PHPOther Income",
+    "isSubAccount": false
+  },
+  {
+    "name": "Interest income",
+    "accountType": "PHPOther Income",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loss on disposal of assets",
+    "accountType": "PHPOther Income",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other operating income (expenses)",
+    "accountType": "PHPOther Income",
+    "isSubAccount": false
+  },
+  {
+    "name": "Unrealised loss on securities, net of tax",
+    "accountType": "PHPOther Income",
+    "isSubAccount": false
+  },
+  {
+    "name": "Utility Expenses Share",
+    "accountType": "PHPOther Income",
+    "isSubAccount": false
+  },
+  {
+    "name": "Exchange Gain or Loss",
+    "accountType": "PHPOther Expense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other Expense",
+    "accountType": "PHPOther Expense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Paypal Charges",
+    "accountType": "PHPOther Expense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Reconciliation Discrepancies",
+    "accountType": "PHPOther Expense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Withholding Tax",
+    "accountType": "PHPOther Expense",
+    "isSubAccount": false
+  },
+  {
+    "name": "Accrued liabilities",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Dividends payable",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Reimbursement",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Engr. Harthwell Capistrano",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Income tax payable",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loan Payable",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Payroll Clearing",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Payroll liabilities",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Short-term debit",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "VAT Payable",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "VAT Suspense",
+    "accountType": "PHPOther Current Liabil...",
+    "isSubAccount": false
+  },
+  {
+    "name": "Allowance for bad debt",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Available for sale assets (short-term)",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cash Loan",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Cash Advances",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Inventory",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Inventory Asset",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loans To Officers",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loans to Others",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Prepaid expenses",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Uncategorised Asset",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Undeposited Funds",
+    "accountType": "PHPOther Current Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Assets held for sale",
+    "accountType": "PHPOther Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Deferred tax assets",
+    "accountType": "PHPOther Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Goodwill",
+    "accountType": "PHPOther Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Intangibles",
+    "accountType": "PHPOther Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loans Receivable",
+    "accountType": "PHPOther Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Long-Term Investments",
+    "accountType": "PHPOther Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Accrued holiday payable",
+    "accountType": "PHPLong Term Liability",
+    "isSubAccount": false
+  },
+  {
+    "name": "Accrued non-current liabilities",
+    "accountType": "PHPLong Term Liability",
+    "isSubAccount": false
+  },
+  {
+    "name": "Liabilities related to assets held for sale",
+    "accountType": "PHPLong Term Liability",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loans from Sir Harth",
+    "accountType": "PHPLong Term Liability",
+    "isSubAccount": false
+  },
+  {
+    "name": "Long-term debt",
+    "accountType": "PHPLong Term Liability",
+    "isSubAccount": false
+  },
+  {
+    "name": "Notes Payable",
+    "accountType": "PHPLong Term Liability",
+    "isSubAccount": false
+  },
+  {
+    "name": "Billable Expense Income",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Borrowed Cash",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Discounts given",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Revenue - General",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Sales",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Sales - retail",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Sales - wholesale",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Sales of Product Income",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Shipping Income",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Unapplied Cash Payment Income",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Uncategorised Income",
+    "accountType": "PHPIncome",
+    "isSubAccount": false
+  },
+  {
+    "name": "Accumulated depreciation on property, plant and equipment",
+    "accountType": "PHPFixed Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Property, plant and equipment",
+    "accountType": "PHPFixed Asset",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other Income",
+    "accountType": "PHPSub-account of Prope...",
+    "isSubAccount": true,
+    "parentName": "Prope"
+  },
+  {
+    "name": "Dividend disbursed",
+    "accountType": "PHPEquity",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equity in earnings of subsidiaries",
+    "accountType": "PHPEquity",
+    "isSubAccount": false
+  },
+  {
+    "name": "Opening Balance Equity",
+    "accountType": "PHPEquity",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other comprehensive income",
+    "accountType": "PHPEquity",
+    "isSubAccount": false
+  },
+  {
+    "name": "Retained Earnings",
+    "accountType": "PHPEquity",
+    "isSubAccount": false
+  },
+  {
+    "name": "Share capital",
+    "accountType": "PHPEquity",
+    "isSubAccount": false
+  },
+  {
+    "name": "Default Credit Card",
+    "accountType": "PHPCredit Card",
+    "isSubAccount": false
+  },
+  {
+    "name": "Change in inventory - COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Consultancy PF",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cost of sales",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Courier Fees",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Courier and Van Rental Fees COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Direct labour - COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Discounts given - COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equipment Rental-Training",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Instructor Fees",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Inventory Shrinkage",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Materials - COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Other - COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Overhead - COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Program Application Fees",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Referral Fee",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Room Accomodation",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Subcontractors - COS",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Trainer/Facilitator Fees",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Meal Expenses",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Supplies and Materials",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Transportation Expenses",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "Venue Rental",
+    "accountType": "PHPCost Of Goods Sold",
+    "isSubAccount": false
+  },
+  {
+    "name": "3481-0038-99 BPI",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "3483 0576 19 Cash on Bank (BPI)",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cash on Bank (BDO)",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cash on hand",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cash on hand(Pangasinan Branch)",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cebu Branch",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Cebu Branch-New",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Charges fee",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Coverage Allowance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Doubtful Accounts",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Educational Assistance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Educational Benefits",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Meal Allowance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equimpment Repair and Maintenace",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equipment",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equipment Maintenance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Equipment Repair and Maintenance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "FLASH EXPRESS",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Gcash Account",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Gcash Charge",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "HCC",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Health Benefits",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "House Keeping Maintenance Allowance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Hrad Expenses",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Hse Training",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Load",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loan Payment",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Masteral Fee",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Meal Allowance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Medical",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Metro Manila Branch",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Office Equipment",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Office Maintenance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Office Repair and maintenance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Paypal Account",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Penalties",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Re-connection Fee",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Roxas Branch-Old Account",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Roxas City Branch",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Salaries and Wages",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Salary and Wage",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Sales Return",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Service Maintainance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Service Maintenance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Shipping Fee",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Sponsorship",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Surcharge",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Equipment",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Materials",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Meal Allowance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Food Subsidies",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training Food Allowance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Training incentives",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Travel Allowance",
+    "accountType": "PHPBank",
+    "isSubAccount": false
+  },
+  {
+    "name": "Accounts Receivable (A/R)",
+    "accountType": "PHPAccounts Receivable",
+    "isSubAccount": false
+  },
+  {
+    "name": "Bank deposit",
+    "accountType": "PHPAccounts Receivable",
+    "isSubAccount": false
+  },
+  {
+    "name": "Employee Loans",
+    "accountType": "PHPAccounts Receivable",
+    "isSubAccount": false
+  },
+  {
+    "name": "Loan Receivables",
+    "accountType": "PHPAccounts Receivable",
+    "isSubAccount": false
+  }
+]
