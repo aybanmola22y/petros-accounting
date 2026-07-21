@@ -357,15 +357,24 @@ export function InvoiceFormDialog({
   );
 
   const customerList: CustomerOption[] = useMemo(() => {
-    const fromStore = receivables.customers.map((c) => ({
-      id: c.id,
-      name: c.name,
-      email: c.email,
-      currency: c.currency,
-    }));
-    const byId = new Map(fromStore.map((c) => [c.id, c]));
+    const byId = new Map<string, CustomerOption>();
+    for (const c of receivables.customers) {
+      byId.set(c.id, {
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        currency: c.currency,
+      });
+    }
     for (const c of customers) {
-      if (!byId.has(c.id)) byId.set(c.id, c);
+      if (!byId.has(c.id)) {
+        byId.set(c.id, {
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          currency: c.currency,
+        });
+      }
     }
     // Imported invoices may only have a display name (import:Name) — keep it selectable.
     const selectedId = form.customerId || prefill?.customerId || "";
