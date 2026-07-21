@@ -1,15 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogError,
+  ImportDialogFilePicker,
+  ImportDialogFooter,
+  ImportDialogHeader,
+  ImportDialogPreviewCard,
+  ImportDialogPreviewStat,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseSalesTransactionLinesSpreadsheet,
@@ -121,109 +122,72 @@ export function ImportSalesTransactionLinesDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Import invoice line items from QuickBooks</DialogTitle>
-        </DialogHeader>
+    <ImportDialog open={open} onOpenChange={handleOpenChange}>
+      <ImportDialogHeader
+        title="Import invoice line items from QuickBooks"
+        exportSteps={[
+          "In QuickBooks: Reports → Sales and customers → Sales by Product/Service Detail.",
+          "Set Report period to All Dates.",
+          "Run report → Export to Excel.",
+          "Upload that file here. It fills the Product/Service lines on each invoice.",
+        ]}
+      />
 
-        <div className="space-y-4 py-1">
-          <div className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground space-y-2">
-            <p className="font-medium text-foreground">Sales by Product/Service Detail</p>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>
-                In QuickBooks:{" "}
-                <span className="font-medium text-foreground">Reports → Sales and customers → Sales by Product/Service Detail</span>
-              </li>
-              <li>Set Report period to All Dates.</li>
-              <li>Run report → Export to Excel.</li>
-              <li>Upload that file here. It fills the Product/Service lines on each invoice.</li>
-            </ol>
-          </div>
+      <ImportDialogBody>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={SALES_TRANSACTION_LINES_IMPORT_ACCEPT}
+          file={file}
+          parsing={parsing}
+          disabled={importing}
+          placeholder="Choose .xls, .xlsx, or .csv file"
+          hint="Replaces existing imported invoice line items"
+          onFileSelect={(selected) => void handleFileSelect(selected)}
+        />
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SALES_TRANSACTION_LINES_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(e) => void handleFileSelect(e.target.files?.[0] ?? null)}
-          />
+        {parseError ? <ImportDialogError message={parseError} /> : null}
 
-          <button
-            type="button"
-            className="flex min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-muted-foreground/35 bg-muted/10 px-4 py-6 text-center hover:bg-muted/30 transition-colors disabled:opacity-60"
-            disabled={parsing || importing}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {parsing ? (
-              <>
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <span className="text-sm font-medium">Reading spreadsheet…</span>
-              </>
-            ) : (
-              <>
-                <Upload className="h-6 w-6 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                  {file ? file.name : "Choose .xls, .xlsx, or .csv file"}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Replaces existing imported invoice line items
-                </span>
-              </>
-            )}
-          </button>
-
-          {parseError && <p className="text-sm text-destructive">{parseError}</p>}
-
-          {preview && (
-            <div className="rounded-lg border bg-card px-4 py-3 space-y-2">
-              <div className="flex items-start gap-3">
-                <FileSpreadsheet className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">
-                    {preview.rows.length.toLocaleString()} line item
-                    {preview.rows.length === 1 ? "" : "s"} ready to import
-                  </p>
-                  <p className="text-muted-foreground">
+        {preview ? (
+          <ImportDialogPreviewCard>
+            <ImportDialogPreviewStat
+              title={
+                <>
+                  {preview.rows.length.toLocaleString()} line item
+                  {preview.rows.length === 1 ? "" : "s"} ready to import
+                </>
+              }
+              details={
+                <>
+                  <p>
                     {preview.invoiceCount.toLocaleString()} invoice
-                    {preview.invoiceCount === 1 ? "" : "s"} · {preview.productCount.toLocaleString()} product
+                    {preview.invoiceCount === 1 ? "" : "s"} ·{" "}
+                    {preview.productCount.toLocaleString()} product
                     {preview.productCount === 1 ? "" : "s"}/service
                     {preview.productCount === 1 ? "" : "s"}
                   </p>
-                  <p className="text-muted-foreground">
+                  <p>
                     Sheet: {preview.sheetName} · Header row: {preview.headerRowNumber}
                   </p>
-                  {preview.skippedRows.length > 0 && (
+                  {preview.skippedRows.length > 0 ? (
                     <p className="text-amber-700">
                       {preview.skippedRows.length} row
                       {preview.skippedRows.length === 1 ? "" : "s"} skipped while reading the file
                     </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+                  ) : null}
+                </>
+              }
+            />
+          </ImportDialogPreviewCard>
+        ) : null}
+      </ImportDialogBody>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={importing}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => void handleImport()}
-            disabled={!preview || preview.rows.length === 0 || parsing || importing}
-          >
-            {importing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Importing…
-              </>
-            ) : (
-              "Import line items"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!preview || preview.rows.length === 0 || parsing}
+        importing={importing}
+        importLabel="Import line items"
+      />
+    </ImportDialog>
   );
 }

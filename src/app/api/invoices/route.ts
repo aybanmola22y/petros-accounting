@@ -5,7 +5,7 @@ import {
   listInvoicesFromDb,
   updateInvoiceInDb,
 } from "@/lib/invoices/repository";
-import { replaceInvoicesInStore } from "@/lib/mock-data/store";
+import { deleteSalesTransactions, replaceInvoicesInStore } from "@/lib/mock-data/store";
 import type { MockInvoice } from "@/lib/mock-data/types";
 
 export async function GET() {
@@ -74,14 +74,22 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Invoice id is required." }, { status: 400 });
     }
 
-    const deleted = await deleteInvoiceInDb(body.id);
-    if (!deleted) {
+    const result = await deleteInvoiceInDb(body.id);
+    if (!result.deleted) {
       return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
+    }
+
+    if (result.deletedSalesIds.length > 0) {
+      deleteSalesTransactions(result.deletedSalesIds);
     }
 
     const invoices = await listInvoicesFromDb();
     replaceInvoicesInStore(invoices);
-    return NextResponse.json({ ok: true, invoices });
+    return NextResponse.json({
+      ok: true,
+      invoices,
+      deletedSalesIds: result.deletedSalesIds,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete invoice." },

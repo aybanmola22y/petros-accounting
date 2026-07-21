@@ -14,7 +14,7 @@ import {
   createSalesTransactionViaApi,
   updateSalesTransactionViaApi,
 } from "@/lib/sales-transactions/api";
-import type { InvoiceStatusTimeline, MockInvoiceLine } from "./types";
+import type { InvoiceStatusTimeline, InvoiceAttachment, MockInvoiceLine } from "./types";
 
 type InvoiceLineInput = {
   id: string;
@@ -58,11 +58,16 @@ async function patchInvoiceTimeline(
     ...patch,
   };
 
-  await updateInvoiceViaApi(invoiceId, {
-    statusTimeline,
-    statusSub: statusSubFromTimeline(statusTimeline),
-  });
-  return true;
+  try {
+    await updateInvoiceViaApi(invoiceId, {
+      statusTimeline,
+      statusSub: statusSubFromTimeline(statusTimeline),
+    });
+    return true;
+  } catch (error) {
+    console.warn("Failed to update invoice timeline:", error);
+    return false;
+  }
 }
 
 export async function recordInvoiceOpened(invoiceId: string): Promise<boolean> {
@@ -123,12 +128,16 @@ export async function recordInvoiceCreation(input: {
   amount: number;
   balanceDue: number;
   lines: InvoiceLineInput[];
+  attachments?: InvoiceAttachment[];
 }) {
   const lines = normalizeInvoiceLines(input.lines);
   const openedAt = nowIso();
+  const lineDescription = lines.map((l) => l.description.trim()).find(Boolean) ?? "";
+  const memo = (lineDescription || input.noteToCustomer).trim().slice(0, 120);
 
-  await createInvoiceViaApi({
+  const invoice = await createInvoiceViaApi({
     customerId: input.customerId,
+    customerName: input.customerName,
     number: input.number,
     date: input.invoiceDate,
     amount: input.amount,
@@ -136,14 +145,17 @@ export async function recordInvoiceCreation(input: {
     kind: "open",
     statusTimeline: { openedAt },
     ...(lines.length > 0 ? { lines } : {}),
+    ...(input.attachments?.length ? { attachments: input.attachments } : {}),
   });
 
+  // Same id as the invoice so list merge keeps lines/attachments on View/Edit.
   await createSalesTransactionViaApi({
+    id: invoice.id,
     date: input.invoiceDate,
     type: "Invoice",
     number: formatInvoiceNumber(input.number),
     customer: input.customerName,
-    memo: input.noteToCustomer.trim().slice(0, 120),
+    memo,
     amount: input.amount,
     status: { kind: "overdue", detail: input.terms || "Due on receipt" },
     qbStatus: "open",
@@ -162,6 +174,7 @@ export async function recordInvoiceUpdate(input: {
   amount: number;
   balanceDue: number;
   lines: InvoiceLineInput[];
+  attachments?: InvoiceAttachment[];
 }): Promise<boolean> {
   const lines = normalizeInvoiceLines(input.lines);
   const invoice = getInvoiceById(input.invoiceId);
@@ -169,11 +182,13 @@ export async function recordInvoiceUpdate(input: {
 
   await updateInvoiceViaApi(input.invoiceId, {
     customerId: input.customerId,
+    customerName: input.customerName,
     number: input.number,
     date: input.invoiceDate,
     amount: input.amount,
     balanceDue: input.balanceDue,
     lines,
+    attachments: input.attachments ?? [],
   });
 
   const updated = getInvoiceById(input.invoiceId);
@@ -181,11 +196,13 @@ export async function recordInvoiceUpdate(input: {
 
   const txn = findSalesTransactionForInvoice(updated, input.customerName);
   if (txn) {
+    const lineDescription = lines.map((l) => l.description.trim()).find(Boolean) ?? "";
+    const memo = (lineDescription || input.noteToCustomer).trim().slice(0, 120);
     await updateSalesTransactionViaApi(txn.id, {
       date: input.invoiceDate,
       number: formatInvoiceNumber(input.number),
       customer: input.customerName,
-      memo: input.noteToCustomer.trim().slice(0, 120),
+      memo,
       amount: input.amount,
       status:
         input.balanceDue <= 0

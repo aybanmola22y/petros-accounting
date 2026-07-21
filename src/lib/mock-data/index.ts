@@ -72,9 +72,11 @@ export {
   getSalesTransactionsSnapshot,
   getDashboardSnapshot,
   addSalesTransaction,
+  upsertSalesTransactionInStore,
   updateSalesTransaction,
   deleteSalesTransactions,
   addExpense,
+  upsertExpenseInStore,
   getNextExpenseNumber,
   getNextPaymentNumber,
   getInvoiceById,
@@ -92,6 +94,8 @@ export {
   getReceivablesSnapshot,
   getServerReceivablesSnapshot,
   hydrateStoreFromPersistence,
+  beginStoreBatch,
+  endStoreBatch,
   subscribeMockStore,
 } from "./store";
 

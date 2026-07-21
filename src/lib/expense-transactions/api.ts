@@ -1,20 +1,19 @@
-import { replaceExpensesInStore } from "@/lib/mock-data/store";
+import {
+  deleteExpenses,
+  replaceExpensesInStore,
+  upsertExpenseInStore,
+} from "@/lib/mock-data/store";
 import type { MockExpenseTransaction } from "@/lib/mock-data/expenses";
 
 type ExpenseListResponse = {
   expenses?: MockExpenseTransaction[];
   expense?: MockExpenseTransaction;
+  ids?: string[];
   error?: string;
 };
 
 async function readExpenseResponse(response: Response): Promise<ExpenseListResponse> {
   return (await response.json()) as ExpenseListResponse;
-}
-
-function syncExpenses(payload: ExpenseListResponse) {
-  if (payload.expenses) {
-    replaceExpensesInStore(payload.expenses);
-  }
 }
 
 export async function fetchExpensesFromApi(): Promise<MockExpenseTransaction[]> {
@@ -43,7 +42,7 @@ export async function createExpenseViaApi(
   if (!payload.expense) {
     throw new Error("Expense was not returned from the server.");
   }
-  syncExpenses(payload);
+  upsertExpenseInStore(payload.expense);
   return payload.expense;
 }
 
@@ -63,7 +62,7 @@ export async function updateExpenseViaApi(
   if (!payload.expense) {
     throw new Error("Expense was not returned from the server.");
   }
-  syncExpenses(payload);
+  upsertExpenseInStore(payload.expense);
   return payload.expense;
 }
 
@@ -77,5 +76,5 @@ export async function deleteExpensesViaApi(ids: string[]): Promise<void> {
   if (!response.ok) {
     throw new Error(payload.error ?? "Failed to delete expense transactions.");
   }
-  syncExpenses(payload);
+  deleteExpenses(payload.ids ?? ids);
 }

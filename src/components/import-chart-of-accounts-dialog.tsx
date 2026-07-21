@@ -1,15 +1,20 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertTriangle, FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogError,
+  ImportDialogFilePicker,
+  ImportDialogFooter,
+  ImportDialogHeader,
+  ImportDialogPreviewCard,
+  ImportDialogPreviewStat,
+  ImportDialogTable,
+  ImportDialogTableMore,
+  ImportDialogTip,
+  ImportDialogWarning,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseChartOfAccountsSpreadsheet,
@@ -137,15 +142,26 @@ export function ImportChartOfAccountsDialog({
   const showBankBalanceWarning =
     preview != null && preview.hasBalanceColumn && !hasBankBalanceColumn;
 
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Import chart of accounts</DialogTitle>
-        </DialogHeader>
+  const previewDetails = preview ? (
+    <>
+      {preview.hasBalanceColumn && preview.rowsWithBalance > 0 ? (
+        <p>{preview.rowsWithBalance.toLocaleString()} with QuickBooks balances</p>
+      ) : null}
+      {hasBankBalanceColumn && preview.rowsWithBankBalance > 0 ? (
+        <p>{preview.rowsWithBankBalance.toLocaleString()} with bank balances</p>
+      ) : null}
+      {preview.skippedRows.length > 0 ? (
+        <p>{preview.skippedRows.length.toLocaleString()} row(s) skipped</p>
+      ) : null}
+    </>
+  ) : null;
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-1">
-          <p className="text-sm text-muted-foreground">
+  return (
+    <ImportDialog open={open} onOpenChange={handleOpenChange} size="wide">
+      <ImportDialogHeader
+        title="Import chart of accounts"
+        description={
+          <>
             Recommended: export the QuickBooks{" "}
             <span className="font-medium text-foreground">Account List</span> report (Reports →
             Account List → Export). It includes a{" "}
@@ -153,175 +169,132 @@ export function ImportChartOfAccountsDialog({
             account balance. You can also use the Chart of accounts list export if you need{" "}
             <span className="font-medium text-foreground">Bank Balance</span> for connected bank
             accounts.
-          </p>
-          <p className="text-sm text-muted-foreground rounded-md border bg-muted/30 px-3 py-2">
-            <span className="font-medium text-foreground">Account List</span> gives QuickBooks
-            balances for all accounts. Re-importing updates existing accounts — you do not need
-            Replace unless you want a full wipe first.
-          </p>
+          </>
+        }
+        exportSteps={[
+          "In QuickBooks: Reports → Account List → Export to Excel.",
+          "Or open Chart of accounts, enable Bank Balance column, and export the list.",
+        ]}
+      />
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SPREADSHEET_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(event) => void handleFileSelect(event.target.files?.[0] ?? null)}
-          />
+      <ImportDialogBody scrollable>
+        <ImportDialogTip>
+          <span className="font-medium text-foreground">Account List</span> gives QuickBooks
+          balances for all accounts. Re-importing updates existing accounts — you do not need
+          Replace unless you want a full wipe first.
+        </ImportDialogTip>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={parsing || importing}
-          >
-            {parsing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4" />
-            )}
-            {file ? file.name : "Choose QuickBooks export (.csv, .xlsx)"}
-          </Button>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={SPREADSHEET_IMPORT_ACCEPT}
+          file={file}
+          parsing={parsing}
+          disabled={importing}
+          placeholder="Choose QuickBooks export (.csv, .xlsx)"
+          onFileSelect={(selected) => void handleFileSelect(selected)}
+        />
 
-          {parseError ? (
-            <p className="text-sm text-destructive rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-              {parseError}
-            </p>
-          ) : null}
+        {parseError ? <ImportDialogError message={parseError} /> : null}
 
-          {preview ? (
-            <div className="space-y-3">
-              {showBankBalanceWarning ? (
-                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-                  <p>
-                    This file has no <span className="font-medium text-foreground">Bank Balance</span>{" "}
-                    column. In QuickBooks, open Chart of accounts, turn on the Bank Balance column,
-                    then export the list (not Run report) and import again. Existing accounts will be
-                    updated with bank balances without replacing your whole chart.
-                  </p>
-                </div>
-              ) : null}
+        {preview ? (
+          <div className="space-y-3">
+            {showBankBalanceWarning ? (
+              <ImportDialogWarning>
+                This file has no <span className="font-medium text-foreground">Bank Balance</span>{" "}
+                column. In QuickBooks, open Chart of accounts, turn on the Bank Balance column,
+                then export the list (not Run report) and import again. Existing accounts will be
+                updated with bank balances without replacing your whole chart.
+              </ImportDialogWarning>
+            ) : null}
 
-              {showBalanceWarning ? (
-                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-                  <p>
-                    {!preview.hasBalanceColumn ? (
-                      <>
-                        This file has no <span className="font-medium text-foreground">QuickBooks Balance</span>{" "}
-                        or <span className="font-medium text-foreground">Total balance</span>{" "}
-                        column, so balances will import as{" "}
-                        <span className="font-medium text-foreground">₱0.00</span>. In QuickBooks,
-                        go to <span className="font-medium text-foreground">Reports → Account List</span>,
-                        export to Excel, then import that file here.
-                      </>
-                    ) : (
-                      <>
-                        A balance column was found but every account is zero. Re-export from QuickBooks with
-                        the <span className="font-medium text-foreground">QuickBooks Balance</span> column
-                        visible on the Chart of accounts list, then import again.
-                      </>
-                    )}
-                  </p>
-                </div>
-              ) : null}
+            {showBalanceWarning ? (
+              <ImportDialogWarning>
+                {!preview.hasBalanceColumn ? (
+                  <>
+                    This file has no{" "}
+                    <span className="font-medium text-foreground">QuickBooks Balance</span> or{" "}
+                    <span className="font-medium text-foreground">Total balance</span> column, so
+                    balances will import as{" "}
+                    <span className="font-medium text-foreground">₱0.00</span>. In QuickBooks, go
+                    to <span className="font-medium text-foreground">Reports → Account List</span>,
+                    export to Excel, then import that file here.
+                  </>
+                ) : (
+                  <>
+                    A balance column was found but every account is zero. Re-export from QuickBooks
+                    with the <span className="font-medium text-foreground">QuickBooks Balance</span>{" "}
+                    column visible on the Chart of accounts list, then import again.
+                  </>
+                )}
+              </ImportDialogWarning>
+            ) : null}
 
-              <div className="flex items-center gap-2 text-sm">
-                <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  <span className="font-semibold tabular-nums">{preview.rows.length}</span> accounts
-                  ready to import
-                  {preview.hasBalanceColumn && preview.rowsWithBalance > 0 && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {preview.rowsWithBalance} with QuickBooks balances
-                    </span>
-                  )}
-                  {hasBankBalanceColumn && preview.rowsWithBankBalance > 0 && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {preview.rowsWithBankBalance} with bank balances
-                    </span>
-                  )}
-                  {preview.skippedRows.length > 0 && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {preview.skippedRows.length} row(s) skipped
-                    </span>
-                  )}
-                </span>
-              </div>
+            <ImportDialogPreviewCard>
+              <ImportDialogPreviewStat
+                title={
+                  <>
+                    <span className="tabular-nums">{preview.rows.length.toLocaleString()}</span>{" "}
+                    accounts ready to import
+                  </>
+                }
+                details={previewDetails}
+              />
+            </ImportDialogPreviewCard>
 
-              <div className="rounded-lg border overflow-x-auto">
-                <table className="w-full min-w-[640px] text-xs">
-                  <thead>
-                    <tr className="border-b bg-muted/40">
-                      <th className="px-3 py-2 text-left font-medium">Account number</th>
-                      <th className="px-3 py-2 text-left font-medium">Account name</th>
-                      <th className="px-3 py-2 text-left font-medium">Account type</th>
-                      <th className="px-3 py-2 text-left font-medium">Detail type</th>
-                      {preview.hasBalanceColumn ? (
-                        <th className="px-3 py-2 text-right font-medium">Total / QB balance</th>
-                      ) : null}
-                      {hasBankBalanceColumn ? (
-                        <th className="px-3 py-2 text-right font-medium">Bank balance</th>
-                      ) : null}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewRows.map((row) => (
-                      <tr key={row.rowNumber} className="border-b last:border-0">
-                        <td className="px-3 py-2 font-mono text-muted-foreground">
-                          {row.number || "—"}
-                        </td>
-                        <td className="px-3 py-2">{row.name}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{row.accountType}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{row.detailType}</td>
-                        {preview.hasBalanceColumn ? (
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {formatPHP(row.ledgerBalance)}
-                          </td>
-                        ) : null}
-                        {hasBankBalanceColumn ? (
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {row.bankBalance !== undefined ? formatPHP(row.bankBalance) : "—"}
-                          </td>
-                        ) : null}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {preview.rows.length > previewRows.length ? (
-                <p className="text-xs text-muted-foreground">
-                  Showing first {previewRows.length} of {preview.rows.length} accounts.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+            <ImportDialogTable minWidth={640}>
+              <thead>
+                <tr className="border-b border-border/70 bg-muted/40">
+                  <th className="px-3 py-2 text-left font-medium">Account number</th>
+                  <th className="px-3 py-2 text-left font-medium">Account name</th>
+                  <th className="px-3 py-2 text-left font-medium">Account type</th>
+                  <th className="px-3 py-2 text-left font-medium">Detail type</th>
+                  {preview.hasBalanceColumn ? (
+                    <th className="px-3 py-2 text-right font-medium">Total / QB balance</th>
+                  ) : null}
+                  {hasBankBalanceColumn ? (
+                    <th className="px-3 py-2 text-right font-medium">Bank balance</th>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {previewRows.map((row) => (
+                  <tr key={row.rowNumber} className="border-b border-border/50 last:border-0">
+                    <td className="px-3 py-2 font-mono text-muted-foreground">
+                      {row.number || "—"}
+                    </td>
+                    <td className="px-3 py-2">{row.name}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.accountType}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.detailType}</td>
+                    {preview.hasBalanceColumn ? (
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {formatPHP(row.ledgerBalance)}
+                      </td>
+                    ) : null}
+                    {hasBankBalanceColumn ? (
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {row.bankBalance !== undefined ? formatPHP(row.bankBalance) : "—"}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </ImportDialogTable>
+            <ImportDialogTableMore
+              shown={previewRows.length}
+              total={preview.rows.length}
+              noun="accounts"
+            />
+          </div>
+        ) : null}
+      </ImportDialogBody>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={() => void handleImport()}
-            disabled={!preview || importing || parsing}
-          >
-            {importing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Importing…
-              </>
-            ) : (
-              `Import ${preview?.rows.length ?? 0} accounts`
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!preview || parsing}
+        importing={importing}
+        importLabel={`Import ${(preview?.rows.length ?? 0).toLocaleString()} accounts`}
+      />
+    </ImportDialog>
   );
 }

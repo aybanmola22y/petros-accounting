@@ -49,5 +49,6 @@ export function buildInvoicePrefillFromTransaction(
     depositAmount: 0,
     shippingEnabled: false,
     shippingAmount: 0,
+    attachments: [],
   };
 }

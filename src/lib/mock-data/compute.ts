@@ -146,9 +146,23 @@ export function computeCustomerBalances(
   });
 }
 
-export function getCustomerName(customerId: string, customers: MockCustomer[] = []): string {
-  if (customerId.startsWith("import:")) return customerId.slice("import:".length);
-  return customers.find((c) => c.id === customerId)?.name ?? "Unknown customer";
+export function getCustomerName(
+  customerId: string,
+  customers: MockCustomer[] = [],
+  customerName?: string,
+): string {
+  const explicit = customerName?.trim();
+  if (explicit && explicit.toLowerCase() !== "unknown customer") return explicit;
+  const id = customerId?.trim() ?? "";
+  if (id.startsWith("import:")) {
+    const name = id.slice("import:".length).trim();
+    if (name && name.toLowerCase() !== "unknown customer") return name;
+  }
+  if (id) {
+    const match = customers.find((c) => c.id === id)?.name?.trim();
+    if (match) return match;
+  }
+  return "Unknown customer";
 }
 
 export function getOverdueInvoiceRows(
@@ -183,7 +197,7 @@ export function buildCustomerHubOverdueFromInvoices(
     count: overdue.length,
     rows: overdue.slice(0, limit).map((inv) => ({
       invoiceId: inv.id,
-      client: getCustomerName(inv.customerId, customers),
+      client: getCustomerName(inv.customerId, customers, inv.customerName),
       date: formatTransactionDateDisplay(inv.date),
       amount: inv.balanceDue,
     })),

@@ -7,6 +7,53 @@ const DEFAULT_TAX = "Out of Scope of Tax";
 
 type CustomerOption = { id: string; name: string; email?: string };
 
+function normalizeCustomerName(name: string): string {
+  return name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function resolveCustomerId(
+  invoiceCustomerId: string | undefined,
+  customerName: string,
+  customers: CustomerOption[],
+): string {
+  const uuid =
+    invoiceCustomerId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      invoiceCustomerId,
+    )
+      ? invoiceCustomerId
+      : "";
+
+  // Only keep a UUID when it still exists in the customer list (otherwise Select shows blank).
+  if (uuid && customers.some((c) => c.id === uuid)) return uuid;
+
+  const fromImport =
+    invoiceCustomerId?.startsWith("import:") ? invoiceCustomerId.slice("import:".length) : "";
+  const target = normalizeCustomerName(customerName || fromImport);
+  if (!target) {
+    // Orphan UUID with no display name — nothing we can show in the Select.
+    return "";
+  }
+
+  const exact = customers.find((c) => normalizeCustomerName(c.name) === target);
+  if (exact) return exact.id;
+
+  const loose = customers.find((c) => {
+    const n = normalizeCustomerName(c.name);
+    return n.includes(target) || target.includes(n);
+  });
+  if (loose) return loose.id;
+
+  // Keep a displayable synthetic id so the Select can show the imported name.
+  const displayName = (customerName || fromImport).trim();
+  return displayName ? `import:${displayName}` : "";
+}
+
 function termsFromInvoice(invoice: MockInvoice, viewRow?: InvoiceViewRow): string {
   if (invoice.kind === "paid") return "Paid";
   if (invoice.kind === "open") return "Due on receipt";
@@ -21,8 +68,11 @@ export function buildInvoicePrefillFromInvoice(
   customers: CustomerOption[],
   viewRow?: InvoiceViewRow,
 ): InvoiceFormValues {
-  const customerId =
-    invoice.customerId || customers.find((c) => c.name === viewRow?.customer)?.id || "";
+  const customerId = resolveCustomerId(
+    invoice.customerId,
+    viewRow?.customer ?? invoice.customerName ?? "",
+    customers,
+  );
 
   const lineAmount = invoice.amount > 0 ? invoice.amount : invoice.balanceDue;
   const lines =
@@ -59,6 +109,9 @@ export function buildInvoicePrefillFromInvoice(
     depositAmount: 0,
     shippingEnabled: false,
     shippingAmount: 0,
+    attachments: invoice.attachments?.length
+      ? invoice.attachments.map((a) => ({ ...a }))
+      : [],
   };
 }
 

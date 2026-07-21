@@ -65,7 +65,7 @@ export function mockInvoiceToViewRow(
   invoice: MockInvoice,
   customers: MockCustomer[] = [],
 ): InvoiceViewRow {
-  const customer = getCustomerName(invoice.customerId, customers);
+  const customer = getCustomerName(invoice.customerId, customers, invoice.customerName);
   const balance = rowBalance(invoice);
   const dueDate = estimateDueDate(invoice);
 
@@ -163,14 +163,14 @@ function invoiceCreatedTime(id: string): number {
   return match ? Number(match[1]) : 0;
 }
 
-/** Newest invoices first (QBO-style): date desc, then number desc, then created id. */
-function compareInvoicesNewestFirst(a: MockInvoice, b: MockInvoice): number {
-  const dateA = parseInvoiceDate(a.date)?.getTime() ?? 0;
-  const dateB = parseInvoiceDate(b.date)?.getTime() ?? 0;
-  if (dateB !== dateA) return dateB - dateA;
-
+/** Descending by invoice number (highest NO. first) so the column stays easy to scan. */
+function compareInvoicesByNumberDesc(a: MockInvoice, b: MockInvoice): number {
   const numDiff = invoiceNumberValue(b.number) - invoiceNumberValue(a.number);
   if (numDiff !== 0) return numDiff;
+
+  const dateA = parseInvoiceDate(a.date)?.getTime() ?? 0;
+  const dateB = parseInvoiceDate(b.date)?.getTime() ?? 0;
+  if (dateA !== dateB) return dateB - dateA;
 
   return invoiceCreatedTime(b.id) - invoiceCreatedTime(a.id);
 }
@@ -180,7 +180,7 @@ export function buildDisplayInvoiceList(
   base: MockInvoice[],
   customers: MockCustomer[] = [],
 ): InvoiceViewRow[] {
-  return [...base].sort(compareInvoicesNewestFirst).map((invoice) => mockInvoiceToViewRow(invoice, customers));
+  return [...base].sort(compareInvoicesByNumberDesc).map((invoice) => mockInvoiceToViewRow(invoice, customers));
 }
 
 /** Counts from real invoices only (matches pipeline / summary cards). */

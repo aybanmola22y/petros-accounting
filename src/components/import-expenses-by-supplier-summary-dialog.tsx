@@ -1,16 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogFilePicker,
+  ImportDialogFileReady,
+  ImportDialogFooter,
+  ImportDialogHeader,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseExpensesBySupplierSummarySpreadsheet,
@@ -92,69 +90,41 @@ export function ImportExpensesBySupplierSummaryDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Import Expenses by Supplier Summary</DialogTitle>
-          <DialogDescription>
+    <ImportDialog open={open} onOpenChange={handleOpenChange}>
+      <ImportDialogHeader
+        title="Import Expenses by Supplier Summary"
+        description={
+          <>
             Export <strong>Expenses by Supplier Summary</strong> from QuickBooks to Excel so Expenses
             Performance matches QuickBooks totals (e.g. ₱3,048,146.76).
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        exportSteps={[
+          "Reports → Expenses and suppliers → Expenses by Supplier Summary.",
+          "Set the same Report period and Accrual method as this management report.",
+          "Export to Excel and upload here.",
+        ]}
+      />
 
-        <div className="space-y-4">
-          <div className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground space-y-1">
-            <p className="font-medium text-foreground">QuickBooks Online</p>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>
-                Reports → Expenses and suppliers →{" "}
-                <span className="font-medium text-foreground">Expenses by Supplier Summary</span>
-              </li>
-              <li>Set the same Report period and Accrual method as this management report</li>
-              <li>Export to Excel and upload here</li>
-            </ol>
-          </div>
+      <ImportDialogBody>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={SPREADSHEET_IMPORT_ACCEPT}
+          file={file}
+          disabled={importing}
+          placeholder="Choose Excel file"
+          onFileSelect={(selected) => setFile(selected)}
+        />
+        {file ? <ImportDialogFileReady /> : null}
+      </ImportDialogBody>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SPREADSHEET_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-start gap-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4" />
-            {file ? file.name : "Choose Excel file"}
-          </Button>
-          {file ? (
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <FileSpreadsheet className="h-3.5 w-3.5" />
-              Ready to import
-            </p>
-          ) : null}
-        </div>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" disabled={!file || importing} onClick={() => void handleImport()}>
-            {importing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Importing…
-              </>
-            ) : (
-              "Import"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!file}
+        importing={importing}
+        importLabel="Import"
+      />
+    </ImportDialog>
   );
 }

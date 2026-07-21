@@ -1,16 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogFilePicker,
+  ImportDialogFileReady,
+  ImportDialogFooter,
+  ImportDialogHeader,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseProfitLossSummarySpreadsheet,
@@ -77,51 +75,42 @@ export function ImportProfitLossDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Import Profit and Loss</DialogTitle>
-          <DialogDescription>
+    <ImportDialog open={open} onOpenChange={handleOpenChange}>
+      <ImportDialogHeader
+        title="Import Profit and Loss"
+        description={
+          <>
             Import your QuickBooks <strong>Profit and Loss</strong> once to set the correct account
             breakdown. After that, new sales and expenses you add in this app automatically update the
             report — you only need to re-import when you want to refresh from QuickBooks.
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        exportSteps={[
+          "In QuickBooks: Reports → Profit and Loss.",
+          "Set the report period and Accrual method to match this app.",
+          "Export to Excel and upload here.",
+        ]}
+      />
 
-        <div className="space-y-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SPREADSHEET_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-start gap-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4" />
-            {file ? file.name : "Choose Profit and Loss file"}
-          </Button>
-          {file ? (
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <FileSpreadsheet className="h-3.5 w-3.5" />
-              Ready to import
-            </p>
-          ) : null}
-        </div>
+      <ImportDialogBody>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={SPREADSHEET_IMPORT_ACCEPT}
+          file={file}
+          disabled={importing}
+          placeholder="Choose Profit and Loss file"
+          onFileSelect={(selected) => setFile(selected)}
+        />
+        {file ? <ImportDialogFileReady /> : null}
+      </ImportDialogBody>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleImport} disabled={!file || importing}>
-            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!file}
+        importing={importing}
+        importLabel="Import"
+      />
+    </ImportDialog>
   );
 }

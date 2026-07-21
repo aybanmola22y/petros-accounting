@@ -85,9 +85,9 @@ import type {
 } from "@/components/send-invoice-dialog";
 import { VoidInvoiceDialog } from "@/components/void-invoice-dialog";
 import { DeleteInvoiceDialog } from "@/components/delete-invoice-dialog";
-import { useInvoicesBootstrap } from "@/hooks/use-invoices-bootstrap";
+import { useInvoicesPageBootstrap } from "@/hooks/use-invoices-page-bootstrap";
 import { useMockReceivables } from "@/hooks/use-mock-receivables";
-import { useMockSales } from "@/hooks/use-mock-sales";
+import { prefetchSalesTransactionLines } from "@/hooks/use-mock-sales";
 import { useToast } from "@/hooks/use-toast";
 import { deleteInvoiceViaApi, voidInvoiceViaApi } from "@/lib/invoices/api";
 import {
@@ -134,7 +134,7 @@ const INVOICE_COLUMN_OPTIONS: { key: InvoiceColumnKey; label: string }[] = [
   { key: "dueDate", label: "Due date" },
 ];
 
-const PAGE_SIZE_OPTIONS = [50, 100, 200] as const;
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 type InvoiceTablePrefs = {
   columns: Record<InvoiceColumnKey, boolean>;
@@ -147,7 +147,7 @@ const DEFAULT_INVOICE_TABLE_PREFS: InvoiceTablePrefs = {
     balance: false,
     dueDate: false,
   },
-  pageSize: 50,
+  pageSize: 25,
 };
 
 const INVOICE_TABLE_PREFS_KEY = "petrobook.invoices-table-prefs";
@@ -177,9 +177,8 @@ export function Invoices() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  useInvoicesBootstrap();
+  useInvoicesPageBootstrap();
   const { customers } = useMockReceivables();
-  useMockSales();
   const allInvoices = useDisplayInvoices();
   const totalRecords = allInvoices.length;
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -275,6 +274,7 @@ export function Invoices() {
 
   function openCreateInvoice() {
     const nextNumber = getNextInvoiceNumber();
+    void prefetchSalesTransactionLines();
     startTransition(() => {
       setInvoiceDialogMode("create");
       setInvoicePrefill(null);
@@ -283,31 +283,6 @@ export function Invoices() {
       setInvoiceDialogOpen(true);
     });
   }
-
-  useEffect(() => {
-    let cancelled = false;
-    const warmDialogs = () => {
-      if (cancelled) return;
-      void import("@/components/invoice-form-dialog");
-      void import("@/components/receive-payment-form-dialog");
-      void import("@/components/send-invoice-dialog");
-    };
-
-    if (typeof window === "undefined") return;
-    if ("requestIdleCallback" in window) {
-      const idleId = window.requestIdleCallback(warmDialogs, { timeout: 1200 });
-      return () => {
-        cancelled = true;
-        window.cancelIdleCallback(idleId);
-      };
-    }
-
-    const timeoutId = setTimeout(warmDialogs, 300);
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, []);
 
   function buildSendPayload(
     row: InvoiceViewRow,
@@ -386,6 +361,7 @@ export function Invoices() {
       return;
     }
     void recordInvoiceOpened(row.id);
+    void prefetchSalesTransactionLines();
     const prefill = buildInvoicePrefillFromInvoice(invoice, customerOptions, row);
     startTransition(() => {
       setInvoiceDialogMode("edit");
@@ -399,7 +375,16 @@ export function Invoices() {
   function duplicateInvoice(row: InvoiceViewRow) {
     const invoice = getInvoiceById(row.id);
     if (!invoice) return;
-    const prefill = buildInvoicePrefillFromInvoice(invoice, customerOptions, row);
+    void prefetchSalesTransactionLines();
+    const prefill = buildInvoicePrefillFromInvoice(
+      {
+        ...invoice,
+        // Prefer the list display name so duplicate always carries the customer.
+        customerName: row.customer !== "Unknown customer" ? row.customer : invoice.customerName,
+      },
+      customerOptions,
+      row,
+    );
     const nextNumber = getNextInvoiceNumber();
     startTransition(() => {
       setInvoiceDialogMode("create");
@@ -582,10 +567,15 @@ export function Invoices() {
   async function handleCreateInvoice(values: InvoiceFormValues) {
     const { amount, balanceDue } = invoiceAmounts(values);
     const customer = customerOptions.find((c) => c.id === values.customerId);
+    const customerName =
+      customer?.name ??
+      (values.customerId.startsWith("import:")
+        ? values.customerId.slice("import:".length)
+        : "Unknown customer");
 
     await recordInvoiceCreation({
       customerId: values.customerId,
-      customerName: customer?.name ?? "Unknown customer",
+      customerName,
       number: values.number,
       invoiceDate: values.invoiceDate,
       terms: values.terms,
@@ -593,6 +583,7 @@ export function Invoices() {
       amount,
       balanceDue,
       lines: values.lines,
+      attachments: values.attachments,
     });
 
     setPage(1);
@@ -606,11 +597,16 @@ export function Invoices() {
     if (!editingInvoiceId) return false;
     const { amount, balanceDue } = invoiceAmounts(values);
     const customer = customerOptions.find((c) => c.id === values.customerId);
+    const customerName =
+      customer?.name ??
+      (values.customerId.startsWith("import:")
+        ? values.customerId.slice("import:".length)
+        : "Unknown customer");
 
     const ok = await recordInvoiceUpdate({
       invoiceId: editingInvoiceId,
       customerId: values.customerId,
-      customerName: customer?.name ?? "Unknown customer",
+      customerName,
       number: values.number,
       invoiceDate: values.invoiceDate,
       terms: values.terms,
@@ -618,6 +614,7 @@ export function Invoices() {
       amount,
       balanceDue,
       lines: values.lines,
+      attachments: values.attachments,
     });
 
     if (!ok) {
@@ -1052,7 +1049,10 @@ export function Invoices() {
 
       {invoiceDialogOpen ? (
       <InvoiceFormDialog
-        key={editingInvoiceId ?? "create-invoice"}
+        key={
+          editingInvoiceId ??
+          (invoicePrefill ? `duplicate-${invoicePrefill.number}` : "create-invoice")
+        }
         open={invoiceDialogOpen}
         onOpenChange={(open) => {
           if (!open) closeInvoiceDialog();

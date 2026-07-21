@@ -1,17 +1,18 @@
 "use client";
 
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogError,
+  ImportDialogFilePicker,
+  ImportDialogFooter,
+  ImportDialogHeader,
+  ImportDialogPreviewCard,
+  ImportDialogPreviewList,
+  ImportDialogPreviewStat,
+  ImportDialogReplaceOption,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseUnpaidBillsSpreadsheet,
@@ -164,131 +165,84 @@ export function ImportUnpaidBillsDialog({
   }, [preview, replace, existingBills.length]);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Import unpaid bills from QuickBooks</DialogTitle>
-        </DialogHeader>
+    <ImportDialog open={open} onOpenChange={handleOpenChange}>
+      <ImportDialogHeader
+        title="Import unpaid bills from QuickBooks"
+        exportSteps={[
+          "In QuickBooks: Expenses → Bills (Unpaid Bills report).",
+          "Export to Excel (.xls).",
+          "Expected columns: Supplier, Due Date, amount, balance, Status. Optional: No. / Bill number (needed for A/P Ageing Detail).",
+        ]}
+      />
 
-        <div className="space-y-4 py-1">
-          <div className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground space-y-2">
-            <p className="font-medium text-foreground">QuickBooks Online export</p>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>
-                In QuickBooks: <span className="font-medium text-foreground">Expenses → Bills</span>{" "}
-                (Unpaid Bills report).
-              </li>
-              <li>Export to Excel (.xls).</li>
-              <li>
-                Expected columns: Supplier, Due Date, amount, balance, Status.
-                Optional: <span className="font-medium text-foreground">No.</span> / Bill number
-                (needed for A/P Ageing Detail).
-              </li>
-              <li>Upload the file here.</li>
-            </ol>
-          </div>
+      <ImportDialogBody>
+        <ImportDialogReplaceOption
+          id="replace-unpaid-bills"
+          label="Replace existing unpaid bills"
+          checked={replace}
+          onCheckedChange={setReplace}
+        />
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="replace-unpaid-bills"
-              checked={replace}
-              onCheckedChange={(checked) => setReplace(checked === true)}
-            />
-            <Label htmlFor="replace-unpaid-bills" className="text-sm font-normal cursor-pointer">
-              Replace existing unpaid bills
-            </Label>
-          </div>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={UNPAID_BILLS_IMPORT_ACCEPT}
+          file={file}
+          parsing={parsing}
+          disabled={importing}
+          placeholder="Choose .xls, .xlsx, or .csv file"
+          hint="Supports QuickBooks Unpaid Bills exports"
+          onFileSelect={(selected) => void handleFileSelect(selected)}
+        />
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={UNPAID_BILLS_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(e) => void handleFileSelect(e.target.files?.[0] ?? null)}
-          />
+        {parseError ? <ImportDialogError message={parseError} /> : null}
 
-          <button
-            type="button"
-            className="flex min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-muted-foreground/35 bg-muted/10 px-4 py-6 text-center hover:bg-muted/30 transition-colors disabled:opacity-60"
-            disabled={parsing || importing}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {parsing ? (
-              <>
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <span className="text-sm font-medium">Reading spreadsheet…</span>
-              </>
-            ) : (
-              <>
-                <Upload className="h-6 w-6 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                  {file ? file.name : "Choose .xls, .xlsx, or .csv file"}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Supports QuickBooks Unpaid Bills exports
-                </span>
-              </>
-            )}
-          </button>
-
-          {parseError && <p className="text-sm text-destructive">{parseError}</p>}
-
-          {preview && (
-            <div className="rounded-lg border bg-card px-4 py-3 space-y-2">
-              <div className="flex items-start gap-3">
-                <FileSpreadsheet className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">
-                    {preview.rows.length} unpaid bill{preview.rows.length === 1 ? "" : "s"} ready to import
-                  </p>
-                  <p className="text-muted-foreground">
+        {preview ? (
+          <ImportDialogPreviewCard>
+            <ImportDialogPreviewStat
+              title={`${preview.rows.length} unpaid bill${preview.rows.length === 1 ? "" : "s"} ready to import`}
+              details={
+                <>
+                  <p>
                     Sheet: {preview.sheetName} · Header row: {preview.headerRowNumber}
                   </p>
-                  <p className="text-muted-foreground tabular-nums">
-                    Total open balance: ₱{totalOpenBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <p className="tabular-nums">
+                    Total open balance: ₱
+                    {totalOpenBalance.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </p>
-                  {importNote && <p className="text-muted-foreground">{importNote}</p>}
-                  {invalidRows > 0 && (
+                  {importNote ? <p>{importNote}</p> : null}
+                  {invalidRows > 0 ? (
                     <p className="text-amber-700">
                       {invalidRows} row{invalidRows === 1 ? "" : "s"} skipped while reading the file
                     </p>
-                  )}
-                </div>
-              </div>
-              {preview.rows.length > 0 && (
-                <div className="border-t pt-2 text-xs text-muted-foreground max-h-28 overflow-y-auto space-y-1">
-                  {preview.rows.slice(0, 5).map((row) => (
-                    <p key={row.rowNumber}>
-                      {row.supplierName} · due {row.dueDate} · ₱{row.openBalance.toLocaleString()}
-                      {row.status ? ` · ${row.status}` : ""}
-                    </p>
-                  ))}
-                  {preview.rows.length > 5 && <p>…and {preview.rows.length - 5} more</p>}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                  ) : null}
+                </>
+              }
+            />
+            {preview.rows.length > 0 ? (
+              <ImportDialogPreviewList>
+                {preview.rows.slice(0, 5).map((row) => (
+                  <p key={row.rowNumber}>
+                    {row.supplierName} · due {row.dueDate} · ₱{row.openBalance.toLocaleString()}
+                    {row.status ? ` · ${row.status}` : ""}
+                  </p>
+                ))}
+                {preview.rows.length > 5 ? <p>…and {preview.rows.length - 5} more</p> : null}
+              </ImportDialogPreviewList>
+            ) : null}
+          </ImportDialogPreviewCard>
+        ) : null}
+      </ImportDialogBody>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={importing}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => void handleImport()}
-            disabled={!preview || preview.rows.length === 0 || parsing || importing}
-          >
-            {importing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Importing…
-              </>
-            ) : (
-              "Import unpaid bills"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!preview || preview.rows.length === 0 || parsing}
+        importing={importing}
+        importLabel="Import unpaid bills"
+      />
+    </ImportDialog>
   );
 }

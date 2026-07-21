@@ -1,9 +1,10 @@
-import { replaceInvoicesInStore } from "@/lib/mock-data/store";
+import { replaceInvoicesInStore, deleteSalesTransactions } from "@/lib/mock-data/store";
 import type { MockInvoice } from "@/lib/mock-data/types";
 
 type InvoiceListResponse = {
   invoices?: MockInvoice[];
   invoice?: MockInvoice;
+  deletedSalesIds?: string[];
   error?: string;
 };
 
@@ -77,6 +78,9 @@ export async function deleteInvoiceViaApi(id: string): Promise<void> {
   const payload = await readInvoiceResponse(response);
   if (!response.ok) {
     throw new Error(payload.error ?? "Failed to delete invoice.");
+  }
+  if (payload.deletedSalesIds?.length) {
+    deleteSalesTransactions(payload.deletedSalesIds);
   }
   syncInvoices(payload);
 }

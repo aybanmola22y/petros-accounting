@@ -1,16 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogFilePicker,
+  ImportDialogFileReady,
+  ImportDialogFooter,
+  ImportDialogHeader,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseBalanceSheetSummarySpreadsheet,
@@ -78,51 +76,41 @@ export function ImportBalanceSheetDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Import Balance Sheet</DialogTitle>
-          <DialogDescription>
+    <ImportDialog open={open} onOpenChange={handleOpenChange}>
+      <ImportDialogHeader
+        title="Import Balance Sheet"
+        description={
+          <>
             Import the QuickBooks <strong>Balance Sheet report</strong> (Reports → Balance Sheet).
             Set <strong>All Dates</strong> and <strong>Accrual</strong> before exporting. The report
             displays your import exactly — re-import to refresh from QuickBooks.
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        exportSteps={[
+          "Reports → Balance Sheet → set All Dates and Accrual.",
+          "Export to Excel and upload here.",
+        ]}
+      />
 
-        <div className="space-y-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SPREADSHEET_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-start gap-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4" />
-            {file ? file.name : "Choose Balance Sheet file"}
-          </Button>
-          {file ? (
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <FileSpreadsheet className="h-3.5 w-3.5" />
-              Ready to import
-            </p>
-          ) : null}
-        </div>
+      <ImportDialogBody>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={SPREADSHEET_IMPORT_ACCEPT}
+          file={file}
+          disabled={importing}
+          placeholder="Choose Balance Sheet file"
+          onFileSelect={(selected) => setFile(selected)}
+        />
+        {file ? <ImportDialogFileReady /> : null}
+      </ImportDialogBody>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleImport} disabled={!file || importing}>
-            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!file}
+        importing={importing}
+        importLabel="Import"
+      />
+    </ImportDialog>
   );
 }

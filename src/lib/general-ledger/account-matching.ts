@@ -1,7 +1,15 @@
 import type { MockChartAccount } from "@/lib/mock-data/chart-of-accounts";
 
 function normalize(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, " ");
+}
+
+function normalizeAccountNumber(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s-]+/g, "");
 }
 
 function stripDeleted(value: string): string {
@@ -16,16 +24,19 @@ export function buildGeneralLedgerAccountMatcher(
   chartAccounts: MockChartAccount[],
 ): (label: string) => string | null {
   const byCandidate = new Map<string, string>();
+  const byNumber = new Map<string, string>();
 
   for (const account of chartAccounts) {
     const name = normalize(account.name);
     const number = normalize(account.number);
     const withNumber = number ? normalize(`${account.number} ${account.name}`) : "";
+    const compactNumber = normalizeAccountNumber(account.number);
 
     if (name && !byCandidate.has(name)) byCandidate.set(name, account.id);
     if (withNumber && !byCandidate.has(withNumber)) byCandidate.set(withNumber, account.id);
     const nameNoDeleted = normalize(stripDeleted(account.name));
     if (nameNoDeleted && !byCandidate.has(nameNoDeleted)) byCandidate.set(nameNoDeleted, account.id);
+    if (compactNumber && !byNumber.has(compactNumber)) byNumber.set(compactNumber, account.id);
   }
 
   return (label: string): string | null => {
@@ -36,6 +47,12 @@ export function buildGeneralLedgerAccountMatcher(
     if (byCandidate.has(noDeleted)) return byCandidate.get(noDeleted)!;
 
     // Try stripping a leading account-number token, then match by name.
+    const leadingNumber = /^([\d][\d\s-]*\d|\d)\s+/.exec(noDeleted);
+    if (leadingNumber) {
+      const compact = normalizeAccountNumber(leadingNumber[1]);
+      if (compact && byNumber.has(compact)) return byNumber.get(compact)!;
+    }
+
     const nameOnly = normalize(noDeleted.replace(/^[\d][\d\s-]*\d\s+/, ""));
     if (nameOnly && byCandidate.has(nameOnly)) return byCandidate.get(nameOnly)!;
 

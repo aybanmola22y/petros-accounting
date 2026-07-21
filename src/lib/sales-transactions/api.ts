@@ -1,24 +1,21 @@
-import { replaceSalesTransactionsInStore } from "@/lib/mock-data/store";
+import {
+  deleteSalesTransactions,
+  upsertSalesTransactionInStore,
+} from "@/lib/mock-data/store";
 import type { MockSalesTransaction } from "@/lib/mock-data/sales";
 
-type SalesTransactionListResponse = {
-  salesTransactions?: MockSalesTransaction[];
+type SalesTransactionMutationResponse = {
   salesTransaction?: MockSalesTransaction;
+  ids?: string[];
   error?: string;
 };
 
-async function readSalesResponse(response: Response): Promise<SalesTransactionListResponse> {
-  return (await response.json()) as SalesTransactionListResponse;
-}
-
-function syncSalesTransactions(payload: SalesTransactionListResponse) {
-  if (payload.salesTransactions) {
-    replaceSalesTransactionsInStore(payload.salesTransactions);
-  }
+async function readSalesResponse(response: Response): Promise<SalesTransactionMutationResponse> {
+  return (await response.json()) as SalesTransactionMutationResponse;
 }
 
 export async function createSalesTransactionViaApi(
-  input: Omit<MockSalesTransaction, "id">,
+  input: Omit<MockSalesTransaction, "id"> & { id?: string },
 ): Promise<MockSalesTransaction> {
   const response = await fetch("/api/sales-transactions", {
     method: "POST",
@@ -32,7 +29,7 @@ export async function createSalesTransactionViaApi(
   if (!payload.salesTransaction) {
     throw new Error("Sales transaction was not returned from the server.");
   }
-  syncSalesTransactions(payload);
+  upsertSalesTransactionInStore(payload.salesTransaction);
   return payload.salesTransaction;
 }
 
@@ -52,6 +49,19 @@ export async function updateSalesTransactionViaApi(
   if (!payload.salesTransaction) {
     throw new Error("Sales transaction was not returned from the server.");
   }
-  syncSalesTransactions(payload);
+  upsertSalesTransactionInStore(payload.salesTransaction);
   return payload.salesTransaction;
+}
+
+export async function deleteSalesTransactionsViaApi(ids: string[]): Promise<void> {
+  const response = await fetch("/api/sales-transactions", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+  const payload = await readSalesResponse(response);
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Failed to delete sales transactions.");
+  }
+  deleteSalesTransactions(payload.ids ?? ids);
 }

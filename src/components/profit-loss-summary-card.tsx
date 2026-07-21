@@ -82,7 +82,7 @@ export function ProfitLossSummaryCard({
   reportHref = standardReportHref("profit-and-loss"),
   className,
 }: ProfitLossSummaryCardProps) {
-  const salesTransactions = useMockSales();
+  const salesTransactions = useMockSales({ includeLines: false });
   const expenses = useMockExpenses();
   const chartAccounts = useMockChartAccounts();
   const [period, setPeriod] = useState<ProfitLossDashboardPeriod>("This month");

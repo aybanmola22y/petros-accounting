@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   CircleDollarSign,
+  Eye,
   GripVertical,
   HelpCircle,
   MessageSquare,
@@ -22,6 +23,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { FormDatePicker } from "@/components/form-date-picker";
 import { ProductClassSelect } from "@/components/product-class-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,6 +69,7 @@ import {
 } from "@/lib/mock-data/recurring-transactions";
 import { createRecurringTemplateViaApi } from "@/lib/recurring-templates/api";
 import { invoiceStatusHeadline, resolveInvoiceStatusTimeline } from "@/lib/invoice-status";
+import type { InvoiceAttachment } from "@/lib/mock-data/types";
 import { formatPHP } from "@/views/financial-report-shared";
 import { cn } from "@/lib/utils";
 
@@ -99,6 +102,7 @@ export type InvoiceFormValues = {
   depositAmount: number;
   shippingEnabled: boolean;
   shippingAmount: number;
+  attachments: InvoiceAttachment[];
 };
 
 type CustomerOption = { id: string; name: string; email?: string; currency?: string };
@@ -252,7 +256,7 @@ type InvoiceFormDialogProps = {
   onReceivePayment?: () => void;
 };
 
-function defaultFormState(invoiceNumber: string) {
+function defaultFormState(invoiceNumber: string): InvoiceFormValues {
   return {
     customerId: "",
     number: invoiceNumber,
@@ -271,6 +275,7 @@ function defaultFormState(invoiceNumber: string) {
     depositAmount: 0,
     shippingEnabled: false,
     shippingAmount: 0,
+    attachments: [],
   };
 }
 
@@ -302,7 +307,10 @@ export function InvoiceFormDialog({
   const [saving, setSaving] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<(typeof RECURRING_FREQUENCIES)[number]>("Monthly");
-  const [attachments, setAttachments] = useState<{ name: string; size: number }[]>([]);
+  const [attachments, setAttachments] = useState<InvoiceAttachment[]>(
+    () => prefill?.attachments?.map((a) => ({ ...a })) ?? [],
+  );
+  const [previewAttachment, setPreviewAttachment] = useState<InvoiceAttachment | null>(null);
   const [customerSelectOpen, setCustomerSelectOpen] = useState(false);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
@@ -319,35 +327,57 @@ export function InvoiceFormDialog({
     const timeline = resolveInvoiceStatusTimeline(editingInvoice);
     return invoiceStatusHeadline(timeline, editingInvoice);
   }, [editingInvoice]);
-  const customerList: CustomerOption[] = useMemo(
-    () =>
-      receivables.customers.map((c) => ({
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        currency: c.currency,
-      })),
-    [receivables.customers],
+  const [form, setForm] = useState(() =>
+    prefill
+      ? {
+          ...prefill,
+          number: prefill.number || invoiceNumber,
+          attachments: prefill.attachments ?? [],
+        }
+      : {
+          customerId: "",
+          number: invoiceNumber,
+          terms: "Due on receipt",
+          invoiceDate: todayShort(),
+          dueDate: todayShort(),
+          tags: "",
+          location: LOCATIONS[0],
+          taxSetting: TAX_SETTINGS[0],
+          lines: [newLine("line-1")],
+          noteToCustomer: "Thank you for making business with us!",
+          memoOnStatement: "",
+          discountEnabled: true,
+          discountPercent: 0,
+          depositEnabled: true,
+          depositAmount: 0,
+          shippingEnabled: false,
+          shippingAmount: 0,
+          attachments: [],
+        },
   );
-  const [form, setForm] = useState(() => ({
-    customerId: "",
-    number: invoiceNumber,
-    terms: "Due on receipt",
-    invoiceDate: todayShort(),
-    dueDate: todayShort(),
-    tags: "",
-    location: LOCATIONS[0],
-    taxSetting: TAX_SETTINGS[0],
-    lines: [newLine("line-1")],
-    noteToCustomer: "Thank you for making business with us!",
-    memoOnStatement: "",
-    discountEnabled: true,
-    discountPercent: 0,
-    depositEnabled: true,
-    depositAmount: 0,
-    shippingEnabled: false,
-    shippingAmount: 0,
-  }));
+
+  const customerList: CustomerOption[] = useMemo(() => {
+    const fromStore = receivables.customers.map((c) => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      currency: c.currency,
+    }));
+    const byId = new Map(fromStore.map((c) => [c.id, c]));
+    for (const c of customers) {
+      if (!byId.has(c.id)) byId.set(c.id, c);
+    }
+    // Imported invoices may only have a display name (import:Name) — keep it selectable.
+    const selectedId = form.customerId || prefill?.customerId || "";
+    if (selectedId.startsWith("import:") && !byId.has(selectedId)) {
+      byId.set(selectedId, {
+        id: selectedId,
+        name: selectedId.slice("import:".length),
+        currency: "PHP",
+      });
+    }
+    return Array.from(byId.values());
+  }, [receivables.customers, customers, form.customerId, prefill?.customerId]);
 
   useEffect(() => {
     if (open) {
@@ -356,14 +386,35 @@ export function InvoiceFormDialog({
           setForm({
             ...prefill,
             number: prefill.number || invoiceNumber,
+            attachments: prefill.attachments ?? [],
           });
+          setAttachments(prefill.attachments?.map((a) => ({ ...a })) ?? []);
           prefillAppliedRef.current = true;
         }
       } else if (mode === "create") {
-        setForm(defaultFormState(invoiceNumber));
-        prefillAppliedRef.current = false;
+        // Duplicate (and any other create-with-prefill) must apply copied fields.
+        if (prefill) {
+          if (!prefillAppliedRef.current) {
+            setForm({
+              ...prefill,
+              number: prefill.number || invoiceNumber,
+              attachments: prefill.attachments ?? [],
+            });
+            setAttachments(prefill.attachments?.map((a) => ({ ...a })) ?? []);
+            prefillAppliedRef.current = true;
+          }
+        } else {
+          setForm(defaultFormState(invoiceNumber));
+          setAttachments([]);
+          prefillAppliedRef.current = false;
+        }
       } else if (mode === "view" && prefill) {
-        setForm({ ...prefill, number: prefill.number || invoiceNumber });
+        setForm({
+          ...prefill,
+          number: prefill.number || invoiceNumber,
+          attachments: prefill.attachments ?? [],
+        });
+        setAttachments(prefill.attachments?.map((a) => ({ ...a })) ?? []);
         prefillAppliedRef.current = true;
       }
     } else {
@@ -374,6 +425,7 @@ export function InvoiceFormDialog({
       setReviewOpen(false);
       setRecurringOpen(false);
       setAttachments([]);
+      setPreviewAttachment(null);
       setCustomerEmail("");
       setCcBccOpen(false);
       setCcEmails("");
@@ -385,6 +437,40 @@ export function InvoiceFormDialog({
     () => customerList.find((c) => c.id === form.customerId) ?? customers.find((c) => c.id === form.customerId),
     [customerList, customers, form.customerId],
   );
+
+  useEffect(() => {
+    if (!open || !form.customerId) return;
+    const known =
+      customerList.some((c) => c.id === form.customerId) ||
+      customers.some((c) => c.id === form.customerId);
+    if (known) return;
+
+    if (form.customerId.startsWith("import:")) {
+      // Keep synthetic import ids — customerList adds a provisional option for display.
+      return;
+    }
+
+    // Orphan UUID / seed id: recover a displayable import: name from prefill when possible.
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        form.customerId,
+      )
+    ) {
+      const fallbackName =
+        (prefill?.customerId?.startsWith("import:")
+          ? prefill.customerId.slice("import:".length)
+          : "") ||
+        selectedCustomer?.name ||
+        "";
+      if (fallbackName.trim()) {
+        setForm((f) => ({ ...f, customerId: `import:${fallbackName.trim()}` }));
+        return;
+      }
+    }
+
+    // Seed-style or other non-list ids cannot be shown or saved to the uuid FK.
+    setForm((f) => ({ ...f, customerId: "" }));
+  }, [open, form.customerId, customerList, customers, prefill?.customerId, selectedCustomer?.name]);
 
   useEffect(() => {
     if (!form.customerId) {
@@ -478,6 +564,7 @@ export function InvoiceFormDialog({
       depositAmount: form.depositAmount,
       shippingEnabled: form.shippingEnabled,
       shippingAmount: form.shippingAmount,
+      attachments,
     };
   }
 
@@ -485,7 +572,18 @@ export function InvoiceFormDialog({
     if (!form.customerId) {
       toast({
         title: "Customer required",
-        description: "Select a customer for this invoice.",
+        description: "Select a customer from the list before saving.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (
+      !customerList.some((c) => c.id === form.customerId) &&
+      !customers.some((c) => c.id === form.customerId)
+    ) {
+      toast({
+        title: "Customer required",
+        description: "Select a valid customer before saving.",
         variant: "destructive",
       });
       return false;
@@ -526,6 +624,7 @@ export function InvoiceFormDialog({
     if (!saved) return;
     const nextNumber = onSaveAndNew?.() ?? invoiceNumber;
     setForm(defaultFormState(nextNumber));
+    setAttachments([]);
     toast({ title: "Invoice saved", description: `Starting invoice ${nextNumber}.` });
   }
 
@@ -658,12 +757,49 @@ export function InvoiceFormDialog({
 
   function handleAttachments(files: FileList | null) {
     if (!files?.length) return;
-    const added = Array.from(files).map((f) => ({ name: f.name, size: f.size }));
-    setAttachments((prev) => [...prev, ...added]);
+    const list = Array.from(files);
+    const oversized = list.filter((f) => f.size > 20 * 1024 * 1024);
+    if (oversized.length > 0) {
+      toast({
+        title: "File too large",
+        description: "Each attachment must be 20 MB or less.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    list.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const attachment: InvoiceAttachment = {
+          id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          name: file.name,
+          size: file.size,
+          mimeType: file.type || "application/octet-stream",
+          dataUrl: reader.result as string,
+          addedAt: new Date().toISOString(),
+        };
+        setAttachments((prev) => [...prev, attachment]);
+      };
+      reader.onerror = () => {
+        toast({
+          title: "Upload failed",
+          description: `Could not read ${file.name}.`,
+          variant: "destructive",
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
     toast({
       title: "Attachments added",
-      description: `${added.length} file${added.length === 1 ? "" : "s"} attached.`,
+      description: `${list.length} file${list.length === 1 ? "" : "s"} attached.`,
     });
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+    setPreviewAttachment((current) => (current?.id === id ? null : current));
   }
 
   return (
@@ -792,6 +928,13 @@ export function InvoiceFormDialog({
                         </span>
                         <span className="shrink-0 text-xs italic text-muted-foreground">Customer</span>
                       </span>
+                    ) : form.customerId.startsWith("import:") ? (
+                      <span className="flex w-full min-w-0 items-center justify-between gap-3">
+                        <span className="truncate">
+                          {form.customerId.slice("import:".length)} - PHP
+                        </span>
+                        <span className="shrink-0 text-xs italic text-muted-foreground">Customer</span>
+                      </span>
                     ) : null}
                   </SelectValue>
                 </SelectTrigger>
@@ -900,10 +1043,16 @@ export function InvoiceFormDialog({
                 </Select>
               </Field>
               <Field label="Invoice date">
-                <Input className="h-10" value={form.invoiceDate} onChange={(e) => setForm((f) => ({ ...f, invoiceDate: e.target.value }))} />
+                <FormDatePicker
+                  value={form.invoiceDate}
+                  onChange={(invoiceDate) => setForm((f) => ({ ...f, invoiceDate }))}
+                />
               </Field>
               <Field label="Due date">
-                <Input className="h-10" value={form.dueDate} onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))} />
+                <FormDatePicker
+                  value={form.dueDate}
+                  onChange={(dueDate) => setForm((f) => ({ ...f, dueDate }))}
+                />
               </Field>
             </div>
 
@@ -1111,17 +1260,34 @@ export function InvoiceFormDialog({
                     <span className="text-xs text-muted-foreground">Max file size: 20 MB</span>
                   </button>
                   {attachments.length > 0 && (
-                    <ul className="text-xs space-y-1">
-                      {attachments.map((a, i) => (
-                        <li key={`${a.name}-${i}`} className="flex items-center justify-between gap-2">
-                          <span className="truncate">{a.name}</span>
-                          <button
-                            type="button"
-                            className="text-muted-foreground hover:text-foreground shrink-0"
-                            onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
-                          >
-                            Remove
-                          </button>
+                    <ul className="space-y-1.5 text-xs">
+                      {attachments.map((a) => (
+                        <li
+                          key={a.id}
+                          className="flex items-center justify-between gap-2 rounded-md border bg-background px-2.5 py-2"
+                        >
+                          <span className="min-w-0 truncate" title={a.name}>
+                            {a.name}
+                          </span>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 gap-1 px-2 text-xs"
+                              onClick={() => setPreviewAttachment(a)}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              Preview
+                            </Button>
+                            <button
+                              type="button"
+                              className="px-1 text-muted-foreground hover:text-foreground"
+                              onClick={() => removeAttachment(a.id)}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -1427,10 +1593,9 @@ export function InvoiceFormDialog({
           </Select>
         </Field>
         <Field label="Next date">
-          <Input
-            className="h-10"
+          <FormDatePicker
             value={form.dueDate}
-            onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+            onChange={(dueDate) => setForm((f) => ({ ...f, dueDate }))}
           />
         </Field>
         <DialogFooter>
@@ -1439,6 +1604,52 @@ export function InvoiceFormDialog({
           </Button>
           <Button type="button" onClick={confirmRecurring}>
             Create schedule
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog
+      open={!!previewAttachment}
+      onOpenChange={(next) => {
+        if (!next) setPreviewAttachment(null);
+      }}
+    >
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col gap-3 overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="truncate pr-8">{previewAttachment?.name ?? "Attachment preview"}</DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-auto rounded-md border bg-muted/20 p-2">
+          {previewAttachment?.mimeType.startsWith("image/") ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewAttachment.dataUrl}
+              alt={previewAttachment.name}
+              className="mx-auto max-h-[70vh] w-auto max-w-full object-contain"
+            />
+          ) : previewAttachment?.mimeType === "application/pdf" ||
+            previewAttachment?.name.toLowerCase().endsWith(".pdf") ? (
+            <iframe
+              title={previewAttachment.name}
+              src={previewAttachment.dataUrl}
+              className="h-[70vh] w-full rounded-sm bg-background"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+              <p className="text-sm text-muted-foreground">
+                Preview isn&apos;t available for this file type. You can open it in a new tab.
+              </p>
+              <Button type="button" variant="outline" asChild>
+                <a href={previewAttachment?.dataUrl} target="_blank" rel="noreferrer">
+                  Open file
+                </a>
+              </Button>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setPreviewAttachment(null)}>
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -71,7 +71,13 @@ export function resolveCustomerIdForName(
 ): string {
   const trimmed = name.trim();
   if (!trimmed) return "import:Unknown customer";
-  const match = customers.find((c) => c.name.trim().toLowerCase() === trimmed.toLowerCase());
+  const normalized = trimmed.toLowerCase();
+  const match =
+    customers.find((c) => c.name.trim().toLowerCase() === normalized) ??
+    customers.find((c) => {
+      const n = c.name.trim().toLowerCase();
+      return n.includes(normalized) || normalized.includes(n);
+    });
   if (match) return match.id;
   return `import:${trimmed}`;
 }
@@ -153,6 +159,11 @@ export function invoicesFromSalesTransactions(
               openBalances,
             );
       const customerId = resolveCustomerIdForName(txn.customer, customers);
+      const rawCustomerName = txn.customer.trim();
+      const customerName =
+        rawCustomerName && rawCustomerName.toLowerCase() !== "unknown customer"
+          ? rawCustomerName
+          : undefined;
 
       const description = txn.memo?.trim() ?? "";
 
@@ -187,6 +198,7 @@ export function invoicesFromSalesTransactions(
         date: txn.date,
         number: txn.number,
         customerId,
+        ...(customerName ? { customerName } : {}),
         amount,
         balanceDue,
         kind,
@@ -211,8 +223,40 @@ export function invoicesFromSalesTransactions(
     });
 }
 
+/** Prefer a resolvable customer id (UUID or import:Name) over an empty store FK. */
+function preferCustomerId(storeId: string | undefined, salesId: string | undefined): string {
+  const store = storeId?.trim() ?? "";
+  const sales = salesId?.trim() ?? "";
+  const uuidRe =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRe.test(store)) return store;
+  if (uuidRe.test(sales)) return sales;
+  if (store.startsWith("import:")) return store;
+  if (sales.startsWith("import:")) return sales;
+  return store || sales;
+}
+
+function preferCustomerName(
+  storeName: string | undefined,
+  salesId: string | undefined,
+  salesName: string | undefined,
+): string | undefined {
+  const fromStore = storeName?.trim();
+  if (fromStore) return fromStore;
+  const fromSalesName = salesName?.trim();
+  if (fromSalesName) return fromSalesName;
+  const sales = salesId?.trim() ?? "";
+  if (sales.startsWith("import:")) {
+    const name = sales.slice("import:".length).trim();
+    return name || undefined;
+  }
+  return undefined;
+}
+
 /** Merge UI-created invoices with invoices derived from sales import.
- * Sales import wins on invoice number. Blank numbers never collide.
+ * Same id: overlay UI fields (timeline, lines, attachments, etc.) onto the sales row.
+ * Same number, different id: still overlay UI fields — otherwise Create/Duplicate
+ * saves are hidden behind the sales-ledger projection.
  */
 export function mergeInvoicesForReceivables(
   storeInvoices: readonly MockInvoice[],
@@ -225,17 +269,43 @@ export function mergeInvoicesForReceivables(
     byId.set(invoice.id, invoice);
   }
 
-  const salesNumbers = new Set(
-    salesInvoices
-      .map((invoice) => normalizeInvoiceRef(invoice.number))
-      .filter((key) => key.length > 0),
-  );
+  const salesByNumber = new Map<string, string>();
+  for (const invoice of salesInvoices) {
+    const key = normalizeInvoiceRef(invoice.number);
+    if (key && !salesByNumber.has(key)) salesByNumber.set(key, invoice.id);
+  }
 
   for (const invoice of storeInvoices) {
-    if (byId.has(invoice.id)) continue;
-    const key = normalizeInvoiceRef(invoice.number);
-    // Prefer the imported sales row when the same invoice number exists.
-    if (key && salesNumbers.has(key)) continue;
+    const existingById = byId.get(invoice.id);
+    const numberKey = normalizeInvoiceRef(invoice.number);
+    const salesIdForNumber = numberKey ? salesByNumber.get(numberKey) : undefined;
+    const existing =
+      existingById ?? (salesIdForNumber ? byId.get(salesIdForNumber) : undefined);
+
+    if (existing) {
+      const customerId = preferCustomerId(invoice.customerId, existing.customerId);
+      const customerName = preferCustomerName(
+        invoice.customerName,
+        existing.customerId,
+        existing.customerName,
+      );
+      byId.set(existing.id, {
+        ...existing,
+        customerId,
+        ...(customerName ? { customerName } : {}),
+        amount: invoice.amount || existing.amount,
+        balanceDue: invoice.balanceDue,
+        statusTimeline: invoice.statusTimeline ?? existing.statusTimeline,
+        statusSub: invoice.statusSub ?? existing.statusSub,
+        voided: invoice.voided ?? existing.voided,
+        kind: invoice.kind ?? existing.kind,
+        overdueDays: invoice.overdueDays ?? existing.overdueDays,
+        ...(invoice.lines?.length ? { lines: invoice.lines } : {}),
+        ...(invoice.attachments?.length ? { attachments: invoice.attachments } : {}),
+      });
+      continue;
+    }
+
     byId.set(invoice.id, invoice);
   }
 

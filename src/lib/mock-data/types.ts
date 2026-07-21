@@ -52,11 +52,22 @@ export type MockInvoiceLine = {
   className: string;
 };
 
+export type InvoiceAttachment = {
+  id: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  dataUrl: string;
+  addedAt: string;
+};
+
 export type MockInvoice = {
   id: string;
   date: string;
   number: string;
   customerId: string;
+  /** Display name when customerId is missing / not a resolvable UUID (imported payees). */
+  customerName?: string;
   amount: number;
   /** Outstanding balance (equals amount for open/overdue; less for partial). */
   balanceDue: number;
@@ -66,6 +77,7 @@ export type MockInvoice = {
   statusTimeline?: InvoiceStatusTimeline;
   voided?: boolean;
   lines?: MockInvoiceLine[];
+  attachments?: InvoiceAttachment[];
 };
 
 export type ReceivablesSummary = {

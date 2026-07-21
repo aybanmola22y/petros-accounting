@@ -1,23 +1,22 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, type ComponentType } from "react";
 import {
-  AlertTriangle,
-  FileSpreadsheet,
+  BookOpenText,
+  ChevronDown,
+  FileText,
+  Landmark,
+  ListTree,
+  MapPin,
+  Package,
+  PieChart,
   Receipt,
   RefreshCw,
+  Tags,
+  TrendingUp,
+  Truck,
   Upload,
   Users,
-  ListTree,
-  Truck,
-  FileText,
-  TrendingUp,
-  MapPin,
-  PieChart,
-  Landmark,
-  BookOpenText,
-  Package,
-  Tags,
 } from "lucide-react";
 import { SupabaseConnectionStatus } from "@/components/supabase-connection-status";
 import { ImportArAgingLocationsDialog } from "@/components/import-ar-aging-locations-dialog";
@@ -35,10 +34,14 @@ import { ImportProductServicesDialog } from "@/components/import-product-service
 import { ImportSuppliersDialog } from "@/components/import-suppliers-dialog";
 import { ImportUnpaidBillsDialog } from "@/components/import-unpaid-bills-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import {
   getStoreDataSummarySnapshot,
   resetMockStore,
@@ -64,44 +67,87 @@ function useStoreSummary() {
   );
 }
 
-function ImportCard({
-  title,
-  description,
-  icon: Icon,
-  qboSteps,
-  onImport,
-}: {
+type ImportItem = {
+  id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   qboSteps: string[];
   onImport: () => void;
+  count?: number;
+};
+
+function ImportRow({ item }: { item: ImportItem }) {
+  const Icon = item.icon;
+
+  return (
+    <div className="group flex flex-col gap-3 bg-white px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:px-5">
+      <div className="flex min-w-0 flex-1 gap-3">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+            {typeof item.count === "number" ? (
+              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                {item.count.toLocaleString()} loaded
+              </span>
+            ) : null}
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {item.description}
+          </p>
+          <Collapsible>
+            <CollapsibleTrigger className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground [&[data-state=open]>svg]:rotate-180">
+              How to export from QuickBooks
+              <ChevronDown className="h-3.5 w-3.5 transition-transform" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+                {item.qboSteps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={item.onImport}
+        className="h-9 shrink-0 gap-2 self-start"
+      >
+        <Upload className="h-3.5 w-3.5" />
+        Import
+      </Button>
+    </div>
+  );
+}
+
+function ImportSection({
+  title,
+  subtitle,
+  items,
+}: {
+  title: string;
+  subtitle: string;
+  items: ImportItem[];
 }) {
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Icon className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <CardTitle className="text-base">{title}</CardTitle>
-            <CardDescription className="mt-1">{description}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ol className="list-decimal space-y-1 pl-4 text-sm text-muted-foreground">
-          {qboSteps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-        <Button type="button" onClick={onImport} className="gap-2">
-          <Upload className="h-4 w-4" />
-          Choose file to import
-        </Button>
-      </CardContent>
-    </Card>
+    <section className="overflow-hidden rounded-xl border border-border/80 bg-white">
+      <div className="border-b border-border/70 bg-muted/30 px-4 py-3 sm:px-5">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="grid gap-px bg-border/70 xl:grid-cols-2">
+        {items.map((item) => (
+          <ImportRow key={item.id} item={item} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -141,306 +187,312 @@ export function QuickBooksImport() {
 
   const hasData = Object.values(summary).some((count) => count > 0);
 
+  const replaceOptions = [
+    { id: "replace-coa", label: "Chart of accounts", checked: replaceCoa, onChange: setReplaceCoa },
+    { id: "replace-expenses", label: "Expenses", checked: replaceExpenses, onChange: setReplaceExpenses },
+    { id: "replace-sales", label: "Sales transactions", checked: replaceSales, onChange: setReplaceSales },
+    {
+      id: "replace-product-services",
+      label: "Products & services",
+      checked: replaceProductServices,
+      onChange: setReplaceProductServices,
+    },
+    { id: "replace-customers", label: "Customers", checked: replaceCustomers, onChange: setReplaceCustomers },
+    { id: "replace-suppliers", label: "Suppliers", checked: replaceSuppliers, onChange: setReplaceSuppliers },
+    {
+      id: "replace-unpaid-bills",
+      label: "Unpaid bills",
+      checked: replaceUnpaidBills,
+      onChange: setReplaceUnpaidBills,
+    },
+  ] as const;
+
+  const summaryStats = [
+    { label: "Accounts", value: summary.chartAccounts },
+    { label: "Expenses", value: summary.expenses },
+    { label: "Sales", value: summary.salesTransactions },
+    { label: "Products", value: summary.products },
+    { label: "Customers", value: summary.customers },
+    { label: "Suppliers", value: summary.suppliers },
+  ];
+
+  const foundationItems: ImportItem[] = [
+    {
+      id: "coa",
+      title: "Chart of Accounts",
+      description: "Account names, types, and balances from the Account List report.",
+      icon: ListTree,
+      count: summary.chartAccounts,
+      qboSteps: [
+        "In QuickBooks: Reports → Account List",
+        "Click Export (Excel) — includes Total balance for every account",
+        "Import that file here to update QuickBooks balances",
+        "Optional: Chart of accounts list export adds Bank Balance for connected banks",
+      ],
+      onImport: () => setCoaDialogOpen(true),
+    },
+    {
+      id: "products",
+      title: "Products and Services",
+      description: "Catalog names, types, prices, and inventory quantities.",
+      icon: Tags,
+      count: summary.products,
+      qboSteps: [
+        "In QuickBooks: Sales → Products and services",
+        "Export the full list to Excel",
+        "Import here — category headers and Service/Inventory types are preserved",
+      ],
+      onImport: () => setProductServicesDialogOpen(true),
+    },
+  ];
+
+  const transactionItems: ImportItem[] = [
+    {
+      id: "expenses",
+      title: "Expenses",
+      description: "Expense, bill, and bill payment transactions.",
+      icon: Receipt,
+      count: summary.expenses,
+      qboSteps: [
+        "In QuickBooks: Expenses → Expenses",
+        "Export the expenses list to Excel",
+        "Import Expenses.xls here",
+      ],
+      onImport: () => setExpensesDialogOpen(true),
+    },
+    {
+      id: "sales",
+      title: "Sales Transactions",
+      description: "Invoices, payments, estimates, and other sales activity.",
+      icon: TrendingUp,
+      count: summary.salesTransactions,
+      qboSteps: [
+        "In QuickBooks: Sales → All sales (or export sales.xls)",
+        "Export the full transaction list to Excel",
+        "Import here — columns match the export 1:1",
+      ],
+      onImport: () => setSalesDialogOpen(true),
+    },
+    {
+      id: "sales-lines",
+      title: "Invoice Line Items",
+      description: "Per-line product, description, quantity, and rate for each invoice.",
+      icon: Package,
+      qboSteps: [
+        "In QuickBooks: Reports → Sales by Product/Service Detail",
+        "Set Report period to All Dates and Run report",
+        "Export to Excel and import here (matched to invoices by number)",
+      ],
+      onImport: () => setSalesLinesDialogOpen(true),
+    },
+    {
+      id: "unpaid-bills",
+      title: "Unpaid Bills",
+      description: "Open bills with supplier, due date, amounts, and status.",
+      icon: FileText,
+      qboSteps: [
+        "In QuickBooks: Expenses → Bills (Unpaid Bills report)",
+        "Export to Excel (Unpaid Bills.xls)",
+        "Import here — columns match the export 1:1",
+      ],
+      onImport: () => setUnpaidBillsDialogOpen(true),
+    },
+  ];
+
+  const reportItems: ImportItem[] = [
+    {
+      id: "pnl",
+      title: "Profit and Loss",
+      description: "Account breakdown for Standard Reports. Re-import only to refresh from QuickBooks.",
+      icon: PieChart,
+      qboSteps: [
+        "In QuickBooks: Reports → Business overview → Profit and Loss",
+        "Set Report period to This year to date (or the same From/To as this app), Accrual",
+        "Confirm the year matches, Export to Excel, import here",
+      ],
+      onImport: () => setProfitLossDialogOpen(true),
+    },
+    {
+      id: "balance-sheet",
+      title: "Balance Sheet",
+      description: "Balance Sheet report layout and totals. Separate from Chart of Accounts.",
+      icon: Landmark,
+      qboSteps: [
+        "In QuickBooks: Reports → Business overview → Balance Sheet",
+        "Set report period to All Dates and accounting method to Accrual",
+        "Export to Excel and import here",
+      ],
+      onImport: () => setBalanceSheetDialogOpen(true),
+    },
+    {
+      id: "gl",
+      title: "Account History (General Ledger)",
+      description: "Per-account transaction history for Account History registers.",
+      icon: BookOpenText,
+      qboSteps: [
+        "In QuickBooks: Reports → General Ledger (or Transaction Detail by Account)",
+        "Set Report period to All Dates and method to Accrual",
+        "Run report → Export to Excel and import here",
+      ],
+      onImport: () => setGeneralLedgerDialogOpen(true),
+    },
+    {
+      id: "ar-aging",
+      title: "AR Ageing Report",
+      description: "Summary or Detail export — Summary for A/R Aging, Detail for Sales Performance.",
+      icon: MapPin,
+      qboSteps: [
+        "Summary: Reports → Who owes you → A/R Ageing Summary → Export to Excel",
+        "Detail: Reports → Who owes you → A/R Ageing Detail → Export to Excel",
+        "Import either file here — the app detects which report it is",
+      ],
+      onImport: () => setArAgingLocationsDialogOpen(true),
+    },
+    {
+      id: "ap-aging",
+      title: "AP Ageing Detail",
+      description: "Open payables detail for Expenses Performance.",
+      icon: Receipt,
+      qboSteps: [
+        "In QuickBooks: Reports → What you owe → A/P Ageing Detail",
+        "Set as of date (e.g. Today), then Export to Excel",
+        "Import here for Expenses Performance A/P Ageing Detail",
+      ],
+      onImport: () => setApAgingDetailDialogOpen(true),
+    },
+    {
+      id: "expenses-by-supplier",
+      title: "Expenses by Supplier Summary",
+      description: "Supplier expense totals for Expenses Performance.",
+      icon: PieChart,
+      qboSteps: [
+        "In QuickBooks: Reports → Expenses and suppliers → Expenses by Supplier Summary",
+        "Set Report period + Accrual (same as the management report)",
+        "Export to Excel and import here",
+      ],
+      onImport: () => setExpensesBySupplierDialogOpen(true),
+    },
+  ];
+
+  const contactItems: ImportItem[] = [
+    {
+      id: "customers",
+      title: "Customers",
+      description: "Customer contacts, addresses, and open balances.",
+      icon: Users,
+      count: summary.customers,
+      qboSteps: [
+        "In QuickBooks: Sales & Get Paid → Customers & leads → Customers",
+        "Export to Excel (Customers.xls)",
+        "Import here — columns match the export 1:1",
+      ],
+      onImport: () => setCustomerDialogOpen(true),
+    },
+    {
+      id: "suppliers",
+      title: "Suppliers / Vendors",
+      description: "Vendor contacts and open balances.",
+      icon: Truck,
+      count: summary.suppliers,
+      qboSteps: [
+        "In QuickBooks: Expenses → Suppliers",
+        "Export supplier list to Excel (Suppliers.xls)",
+        "Import here — columns match the export 1:1",
+      ],
+      onImport: () => setSupplierDialogOpen(true),
+    },
+  ];
+
   return (
-    <div className="space-y-6 w-full max-w-5xl">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="w-full space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Accounting
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight">Import from QuickBooks</h1>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Export lists from QuickBooks Online as Excel or CSV, then import them here. Chart of
-            accounts, expenses, sales transactions, products and services, customers, suppliers, and unpaid bills are saved to Supabase.
+          <h2 className="text-lg font-semibold tracking-tight">Import from QuickBooks</h2>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Export Excel or CSV from QuickBooks Online, then import here. Data is saved to Supabase.
           </p>
         </div>
         <Button
           type="button"
-          variant="outline"
-          className="gap-2 shrink-0"
+          variant="ghost"
+          size="sm"
+          className="h-9 shrink-0 gap-2 text-muted-foreground hover:text-foreground"
           onClick={handleReset}
           disabled={!hasData}
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="h-3.5 w-3.5" />
           Clear all data
         </Button>
       </div>
 
       <SupabaseConnectionStatus />
 
-      <Card className="rounded-xl border-dashed">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-            Current data in this browser
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
-            <div>
-              <p className="text-2xl font-semibold tabular-nums">{summary.chartAccounts}</p>
-              <p className="text-muted-foreground">Accounts</p>
-            </div>
-            <div>
-              <p className="text-2xl font-semibold tabular-nums">{summary.expenses}</p>
-              <p className="text-muted-foreground">Expenses</p>
-            </div>
-            <div>
-              <p className="text-2xl font-semibold tabular-nums">{summary.salesTransactions}</p>
-              <p className="text-muted-foreground">Sales</p>
-            </div>
-            <div>
-              <p className="text-2xl font-semibold tabular-nums">{summary.suppliers}</p>
-              <p className="text-muted-foreground">Suppliers</p>
-            </div>
-            <div>
-              <p className="text-2xl font-semibold tabular-nums">{summary.customers}</p>
-              <p className="text-muted-foreground">Customers</p>
-            </div>
-            <div>
-              <p className="text-2xl font-semibold tabular-nums">{summary.products}</p>
-              <p className="text-muted-foreground">Products</p>
-            </div>
+      <div className="rounded-xl border border-border/80 bg-white p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold">Loaded data</p>
+            <p className="text-xs text-muted-foreground">Counts currently available in this workspace</p>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
-        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-        <p className="text-muted-foreground">
-          <span className="font-medium text-foreground">Recommended order:</span> Chart of Accounts
-          first, then Expenses, then Sales Transactions, then Customers, then Suppliers and Unpaid Bills.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-3">
-          <Checkbox
-            id="replace-coa"
-            checked={replaceCoa}
-            onCheckedChange={(checked) => setReplaceCoa(checked === true)}
-          />
-          <Label htmlFor="replace-coa" className="text-sm font-normal cursor-pointer">
-            Replace existing chart of accounts on import (recommended for first import)
-          </Label>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-3">
-          <Checkbox
-            id="replace-expenses"
-            checked={replaceExpenses}
-            onCheckedChange={(checked) => setReplaceExpenses(checked === true)}
-          />
-          <Label htmlFor="replace-expenses" className="text-sm font-normal cursor-pointer">
-            Replace existing expenses on import (recommended for first import)
-          </Label>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-3">
-          <Checkbox
-            id="replace-customers"
-            checked={replaceCustomers}
-            onCheckedChange={(checked) => setReplaceCustomers(checked === true)}
-          />
-          <Label htmlFor="replace-customers" className="text-sm font-normal cursor-pointer">
-            Replace existing customers on import (recommended for first import)
-          </Label>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-3">
-          <Checkbox
-            id="replace-suppliers"
-            checked={replaceSuppliers}
-            onCheckedChange={(checked) => setReplaceSuppliers(checked === true)}
-          />
-          <Label htmlFor="replace-suppliers" className="text-sm font-normal cursor-pointer">
-            Replace existing suppliers on import (recommended for first import)
-          </Label>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-3">
-          <Checkbox
-            id="replace-sales"
-            checked={replaceSales}
-            onCheckedChange={(checked) => setReplaceSales(checked === true)}
-          />
-          <Label htmlFor="replace-sales" className="text-sm font-normal cursor-pointer">
-            Replace existing sales transactions on import (recommended for first import)
-          </Label>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-3">
-          <Checkbox
-            id="replace-product-services"
-            checked={replaceProductServices}
-            onCheckedChange={(checked) => setReplaceProductServices(checked === true)}
-          />
-          <Label htmlFor="replace-product-services" className="text-sm font-normal cursor-pointer">
-            Replace existing products and services on import (recommended for first import)
-          </Label>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border px-4 py-3">
-          <Checkbox
-            id="replace-unpaid-bills"
-            checked={replaceUnpaidBills}
-            onCheckedChange={(checked) => setReplaceUnpaidBills(checked === true)}
-          />
-          <Label htmlFor="replace-unpaid-bills" className="text-sm font-normal cursor-pointer">
-            Replace existing unpaid bills on import (recommended for first import)
-          </Label>
+        <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 sm:grid-cols-6">
+          {summaryStats.map((stat) => (
+            <div key={stat.label} className="bg-white px-3 py-3 text-center">
+              <p className="text-lg font-semibold tabular-nums tracking-tight">{stat.value}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <ImportCard
-          title="Chart of Accounts"
-          description="Account names, types, and balances from QuickBooks. Best source: Account List report (Total balance column)."
-          icon={ListTree}
-          qboSteps={[
-            "In QuickBooks: Reports → Account List",
-            "Click Export (Excel) — includes Total balance for every account",
-            "Import that file here to update QuickBooks balances",
-            "Optional: Chart of accounts list export adds Bank Balance for connected banks",
-          ]}
-          onImport={() => setCoaDialogOpen(true)}
+      <div className="rounded-xl border border-border/80 bg-white p-4">
+        <div className="mb-3">
+          <p className="text-sm font-semibold">Import preferences</p>
+          <p className="text-xs text-muted-foreground">
+            Recommended order: Chart of Accounts → Expenses → Sales → Customers → Suppliers & Bills.
+            Checked items replace existing records on import.
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {replaceOptions.map((option) => (
+            <label
+              key={option.id}
+              htmlFor={option.id}
+              className={cn(
+                "flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/70 px-3 py-2.5",
+                "transition-colors hover:bg-muted/40",
+              )}
+            >
+              <Checkbox
+                id={option.id}
+                checked={option.checked}
+                onCheckedChange={(checked) => option.onChange(checked === true)}
+              />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <ImportSection
+          title="1. Foundation"
+          subtitle="Start here so later imports can match accounts and products."
+          items={foundationItems}
         />
-        <ImportCard
-          title="Expenses"
-          description="Expense, bill, and bill payment transactions from QuickBooks."
-          icon={Receipt}
-          qboSteps={[
-            "In QuickBooks: Expenses → Expenses",
-            "Export the expenses list to Excel",
-            "Import Expenses.xls here",
-          ]}
-          onImport={() => setExpensesDialogOpen(true)}
+        <ImportSection
+          title="2. Transactions"
+          subtitle="Bring in day-to-day expense and sales activity."
+          items={transactionItems}
         />
-        <ImportCard
-          title="Sales Transactions"
-          description="Invoices, payments, estimates, and other sales activity from QuickBooks."
-          icon={TrendingUp}
-          qboSteps={[
-            "In QuickBooks: Sales → All sales (or export sales.xls)",
-            "Export the full transaction list to Excel",
-            "Import here — columns match the export 1:1",
-          ]}
-          onImport={() => setSalesDialogOpen(true)}
+        <ImportSection
+          title="3. Reports"
+          subtitle="Optional report snapshots for dashboards and standard reports."
+          items={reportItems}
         />
-        <ImportCard
-          title="Products and Services"
-          description="Your sellable catalog from QuickBooks — names, types, prices, and inventory quantities for the Products & Services page."
-          icon={Tags}
-          qboSteps={[
-            "In QuickBooks: Sales → Products and services",
-            "Export the full list to Excel",
-            "Import here — category headers and Service/Inventory types are preserved",
-          ]}
-          onImport={() => setProductServicesDialogOpen(true)}
-        />
-        <ImportCard
-          title="Invoice Line Items"
-          description="Per-line Product/Service, description, quantity, and rate for each invoice — fills the View/Edit invoice lines so they match QuickBooks exactly."
-          icon={Package}
-          qboSteps={[
-            "In QuickBooks: Reports → Sales by Product/Service Detail",
-            "Set Report period to All Dates and Run report",
-            "Export to Excel and import here (matched to invoices by number)",
-          ]}
-          onImport={() => setSalesLinesDialogOpen(true)}
-        />
-        <ImportCard
-          title="Profit and Loss"
-          description="Import once from QuickBooks for the correct account breakdown. New sales and expenses in the app update the report automatically — re-import only to refresh from QuickBooks."
-          icon={PieChart}
-          qboSteps={[
-            "In QuickBooks: Reports → Business overview → Profit and Loss",
-            "Set Report period to This year to date (or the same From/To as this app), Accrual",
-            "Confirm the year matches (e.g. 01/01/2026 – 07/13/2026), Export to Excel, import here",
-          ]}
-          onImport={() => setProfitLossDialogOpen(true)}
-        />
-        <ImportCard
-          title="Balance Sheet"
-          description="Separate from Chart of Accounts — import the Balance Sheet report for Standard Reports layout and totals. All Dates + Accrual. New transactions update automatically."
-          icon={Landmark}
-          qboSteps={[
-            "In QuickBooks: Reports → Business overview → Balance Sheet",
-            "Set report period to All Dates and accounting method to Accrual",
-            "Export to Excel and import here (not the Chart of accounts Run report)",
-          ]}
-          onImport={() => setBalanceSheetDialogOpen(true)}
-        />
-        <ImportCard
-          title="Account History (General Ledger)"
-          description="Real per-account transaction history (the register shown when you click Account history). Makes every account match QuickBooks exactly — BPI, Cash on hand, and all others."
-          icon={BookOpenText}
-          qboSteps={[
-            "In QuickBooks: Reports → General Ledger (or Transaction Detail by Account)",
-            "Set Report period to All Dates and method to Accrual",
-            "Run report → Export to Excel and import here",
-          ]}
-          onImport={() => setGeneralLedgerDialogOpen(true)}
-        />
-        <ImportCard
-          title="AR Ageing Report"
-          description="Summary or Detail export from QuickBooks — Summary for A/R Aging, Detail for Sales Performance."
-          icon={MapPin}
-          qboSteps={[
-            "Summary: Reports → Who owes you → A/R Ageing Summary → Export to Excel",
-            "Detail: Reports → Who owes you → A/R Ageing Detail → Export to Excel",
-            "Import either file here — the app detects which report it is",
-          ]}
-          onImport={() => setArAgingLocationsDialogOpen(true)}
-        />
-        <ImportCard
-          title="AP Ageing Detail"
-          description="A/P Ageing Detail from QuickBooks — matches Expenses Performance (No., Location, Past Due, totals)."
-          icon={Receipt}
-          qboSteps={[
-            "In QuickBooks: Reports → What you owe → A/P Ageing Detail",
-            "Set as of date (e.g. Today), then Export to Excel",
-            "Import here for Expenses Performance A/P Ageing Detail",
-          ]}
-          onImport={() => setApAgingDetailDialogOpen(true)}
-        />
-        <ImportCard
-          title="Expenses by Supplier Summary"
-          description="Supplier expense totals from QuickBooks — matches Expenses Performance TOTAL (e.g. ₱3,048,146.76)."
-          icon={PieChart}
-          qboSteps={[
-            "In QuickBooks: Reports → Expenses and suppliers → Expenses by Supplier Summary",
-            "Set Report period + Accrual (same as the management report)",
-            "Export to Excel and import here",
-          ]}
-          onImport={() => setExpensesBySupplierDialogOpen(true)}
-        />
-        <ImportCard
-          title="Unpaid Bills"
-          description="Open bills from QuickBooks — supplier, due date, amounts, and status."
-          icon={FileText}
-          qboSteps={[
-            "In QuickBooks: Expenses → Bills (Unpaid Bills report)",
-            "Export to Excel (Unpaid Bills.xls)",
-            "Import here — columns match the export 1:1",
-          ]}
-          onImport={() => setUnpaidBillsDialogOpen(true)}
-        />
-        <ImportCard
-          title="Customers"
-          description="Customer contact list with addresses and open balances."
-          icon={Users}
-          qboSteps={[
-            "In QuickBooks: Sales & Get Paid → Customers & leads → Customers",
-            "Export to Excel (Customers.xls)",
-            "Import here — columns match the export 1:1",
-          ]}
-          onImport={() => setCustomerDialogOpen(true)}
-        />
-        <ImportCard
-          title="Suppliers / Vendors"
-          description="Vendor list with contact details and open balances."
-          icon={Truck}
-          qboSteps={[
-            "In QuickBooks: Expenses → Suppliers",
-            "Export supplier list to Excel (Suppliers.xls)",
-            "Import here — columns match the export 1:1",
-          ]}
-          onImport={() => setSupplierDialogOpen(true)}
+        <ImportSection
+          title="4. Contacts"
+          subtitle="Customer and supplier lists with open balances."
+          items={contactItems}
         />
       </div>
 

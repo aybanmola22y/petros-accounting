@@ -1,15 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogError,
+  ImportDialogFilePicker,
+  ImportDialogFooter,
+  ImportDialogHeader,
+  ImportDialogPreviewCard,
+  ImportDialogPreviewStat,
+  ImportDialogTable,
+  ImportDialogTip,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   parseGeneralLedgerSpreadsheet,
@@ -140,111 +143,98 @@ export function ImportGeneralLedgerDialog({
   const totalRows = preview?.snapshot.rows.length ?? 0;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Import account history (General Ledger)</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto space-y-4 py-1">
-          <p className="text-sm text-muted-foreground">
+    <ImportDialog open={open} onOpenChange={handleOpenChange} size="wide">
+      <ImportDialogHeader
+        title="Import account history (General Ledger)"
+        description={
+          <>
             Use the QuickBooks{" "}
             <span className="font-medium text-foreground">
               Reports → General Ledger → All Dates → Accrual → Export to Excel
             </span>{" "}
             file. This populates the real per-account transaction history (the register you see when
             you click <span className="font-medium text-foreground">Account history</span>), so each
-            account matches QuickBooks exactly. (Transaction Detail by Account works too.)
-          </p>
+            account matches QuickBooks exactly.
+          </>
+        }
+        exportSteps={[
+          "Reports → General Ledger → set All Dates and Accrual.",
+          "Export to Excel and upload here.",
+          "Transaction Detail by Account works too.",
+        ]}
+      />
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SPREADSHEET_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(event) => void handleFileSelect(event.target.files?.[0] ?? null)}
-          />
+      <ImportDialogBody scrollable>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={SPREADSHEET_IMPORT_ACCEPT}
+          file={file}
+          parsing={parsing}
+          disabled={importing}
+          placeholder="Choose General Ledger export (.csv, .xlsx)"
+          onFileSelect={(selected) => void handleFileSelect(selected)}
+        />
 
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={parsing || importing}
-          >
-            {parsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            {file ? file.name : "Choose General Ledger export (.csv, .xlsx)"}
-          </Button>
+        {parseError ? <ImportDialogError message={parseError} /> : null}
 
-          {parseError ? (
-            <p className="text-sm text-destructive rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-              {parseError}
-            </p>
-          ) : null}
+        {preview ? (
+          <div className="space-y-3">
+            <ImportDialogPreviewCard>
+              <ImportDialogPreviewStat
+                title={
+                  <>
+                    <span className="tabular-nums">{totalRows.toLocaleString()}</span> transactions
+                    across{" "}
+                    <span className="tabular-nums">{preview.accountCount.toLocaleString()}</span>{" "}
+                    accounts
+                  </>
+                }
+                details={
+                  preview.snapshot.periodLabel ? (
+                    <p>{preview.snapshot.periodLabel}</p>
+                  ) : undefined
+                }
+              />
+            </ImportDialogPreviewCard>
 
-          {preview ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  <span className="font-semibold tabular-nums">{totalRows.toLocaleString()}</span>{" "}
-                  transactions across{" "}
-                  <span className="font-semibold tabular-nums">{preview.accountCount}</span> accounts
-                  {preview.snapshot.periodLabel ? (
-                    <span className="text-muted-foreground"> · {preview.snapshot.periodLabel}</span>
-                  ) : null}
-                </span>
-              </div>
+            <ImportDialogTable minWidth={480}>
+              <thead>
+                <tr className="border-b border-border/70 bg-muted/40">
+                  <th className="px-3 py-2 text-left font-medium">Account</th>
+                  <th className="px-3 py-2 text-right font-medium">Transactions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.topAccounts.map((row) => (
+                  <tr key={row.label} className="border-b border-border/50 last:border-0">
+                    <td className="px-3 py-2">{row.label}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {row.count.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </ImportDialogTable>
 
-              <div className="rounded-lg border overflow-x-auto">
-                <table className="w-full min-w-[480px] text-xs">
-                  <thead>
-                    <tr className="border-b bg-muted/40">
-                      <th className="px-3 py-2 text-left font-medium">Account</th>
-                      <th className="px-3 py-2 text-right font-medium">Transactions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.topAccounts.map((row) => (
-                      <tr key={row.label} className="border-b last:border-0">
-                        <td className="px-3 py-2">{row.label}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">
-                          {row.count.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Importing replaces any previously imported account history.
-              </p>
-            </div>
-          ) : null}
-        </div>
+            <ImportDialogTip>
+              Importing replaces any previously imported account history.
+            </ImportDialogTip>
+          </div>
+        ) : null}
+      </ImportDialogBody>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={() => void handleImport()}
-            disabled={!preview || importing || parsing}
-          >
-            {importing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {progress
-                  ? `Importing… ${Math.round((progress.done / progress.total) * 100)}%`
-                  : "Importing…"}
-              </>
-            ) : (
-              `Import ${totalRows.toLocaleString()} transactions`
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!preview || parsing}
+        importing={importing}
+        importingLabel={
+          progress
+            ? `Importing… ${Math.round((progress.done / progress.total) * 100)}%`
+            : undefined
+        }
+        importLabel={`Import ${totalRows.toLocaleString()} transactions`}
+      />
+    </ImportDialog>
   );
 }

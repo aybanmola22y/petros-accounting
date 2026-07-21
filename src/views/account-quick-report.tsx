@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Settings2, Upload } from "lucide-react";
+import { ImportGeneralLedgerDialog } from "@/components/import-general-ledger-dialog";
 import { ReportDateField } from "@/components/report-date-field";
 import { ReportPeriodSelect } from "@/components/report-period-select";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { useImportedAccountHistory } from "@/hooks/use-imported-account-history"
 import { useMockSales } from "@/hooks/use-mock-sales";
 import { CHART_OF_ACCOUNTS_PATH } from "@/lib/account-quick-report-navigation";
 import { computeAccountQuickReport } from "@/lib/ledger/compute-account-quick-report";
-import { buildAccountHistoryFromGeneralLedger } from "@/lib/general-ledger/build-account-history";
+import { buildAccountHistoryFromGeneralLedger, mergeAccountHistoryWithComputedActivity } from "@/lib/general-ledger/build-account-history";
 import { dashboardLedgerAnchor } from "@/lib/ledger/dashboard-ledger-anchor";
 import {
   formatReportDateLong,
@@ -159,8 +160,6 @@ export function AccountQuickReport() {
   const { accounts: chartAccounts, loading: accountsLoading } = useChartAccounts();
   const { expenses, loading: expensesLoading } = useExpenseTransactions();
   const sales = useMockSales();
-  const { data: importedHistory, isLoading: importedHistoryLoading } =
-    useImportedAccountHistory(accountId);
 
   const anchor = dashboardLedgerAnchor();
   const initialRange = resolveReportRange(DEFAULT_PERIOD, anchor, anchor, anchor);
@@ -171,6 +170,10 @@ export function AccountQuickReport() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [groupOpen, setGroupOpen] = useState(true);
   const [page, setPage] = useState(1);
+  const [importHistoryOpen, setImportHistoryOpen] = useState(false);
+
+  const { data: importedHistory, isLoading: importedHistoryLoading } =
+    useImportedAccountHistory(accountId, refreshKey);
 
   const range = useMemo(
     () => resolveReportRange(period, fromDate, toDate, anchor),
@@ -187,7 +190,25 @@ export function AccountQuickReport() {
 
     const account = chartAccounts.find((row) => row.id === accountId);
     if (account && usingImportedHistory && importedHistory) {
-      return buildAccountHistoryFromGeneralLedger(account, importedHistory.rows, range);
+      const glResult = buildAccountHistoryFromGeneralLedger(
+        account,
+        importedHistory.rows,
+        range,
+      );
+      const computed = computeAccountQuickReport(
+        accountId,
+        range,
+        chartAccounts,
+        expenses,
+        sales,
+      );
+      return mergeAccountHistoryWithComputedActivity(
+        glResult,
+        computed,
+        account,
+        importedHistory.rows,
+        range,
+      );
     }
 
     return computeAccountQuickReport(accountId, range, chartAccounts, expenses, sales);
@@ -258,10 +279,25 @@ export function AccountQuickReport() {
     setPage((current) => (current > totalPages ? totalPages : current));
   }, [totalPages]);
 
+  const historyDrift =
+    report != null &&
+    report.rows.length > 0 &&
+    Math.abs(report.rows[report.rows.length - 1]!.balance - report.endingBalance) > 0.01;
+
+  const historySourceNote = usingImportedHistory
+    ? historyDrift
+      ? "Imported General Ledger is older than your Chart of Accounts balance. Ending balance uses the latest QuickBooks total — re-import General Ledger to refresh every transaction."
+      : "Imported from QuickBooks General Ledger — matches QuickBooks exactly."
+    : "Built from imported sales and expenses — transactions post to this account from your ledger.";
+
   const handleRefresh = useCallback(() => {
     setRefreshKey((key) => key + 1);
     toast({ title: "Report refreshed", description: dateLabel });
   }, [dateLabel, toast]);
+
+  const handleHistoryImported = useCallback(() => {
+    setRefreshKey((key) => key + 1);
+  }, []);
 
   const handleEmail = useCallback(() => {
     if (!report) return;
@@ -447,6 +483,12 @@ export function AccountQuickReport() {
 
   return (
     <div className="space-y-4 print:space-y-0">
+      <ImportGeneralLedgerDialog
+        open={importHistoryOpen}
+        onOpenChange={setImportHistoryOpen}
+        onImported={handleHistoryImported}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
           href={CHART_OF_ACCOUNTS_PATH}
@@ -486,6 +528,29 @@ export function AccountQuickReport() {
         </div>
       </div>
 
+      {historyDrift ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
+          <div className="min-w-0 space-y-1 text-sm">
+            <p className="font-medium text-foreground">
+              Register is incomplete ({transactionCount} transactions shown)
+            </p>
+            <p className="text-muted-foreground">
+              QuickBooks has newer lines than your last General Ledger import. Re-export General
+              Ledger with All Dates and import it here to match the full register.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 shrink-0 gap-2"
+            onClick={() => setImportHistoryOpen(true)}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Re-import General Ledger
+          </Button>
+        </div>
+      ) : null}
+
       <div className="rounded-xl border bg-card px-5 py-4 print:border-0 print:px-0">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Chart of accounts
@@ -495,9 +560,7 @@ export function AccountQuickReport() {
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{accountHeader}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {usingImportedHistory
-                ? "Imported from QuickBooks General Ledger — matches QuickBooks exactly."
-                : "Built from imported sales and expenses — transactions post to this account from your ledger."}
+              {historySourceNote}
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-6 text-right">

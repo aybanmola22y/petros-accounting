@@ -1,16 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogFilePicker,
+  ImportDialogFooter,
+  ImportDialogHeader,
+  ImportDialogTip,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import { importArAgingReport } from "@/lib/ar-aging-location-enrichment";
 import { replaceSalesTransactionsInStore } from "@/lib/mock-data/store";
@@ -75,49 +73,43 @@ export function ImportArAgingLocationsDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Import AR Ageing Report</DialogTitle>
-          <DialogDescription>
+    <ImportDialog open={open} onOpenChange={handleOpenChange}>
+      <ImportDialogHeader
+        title="Import AR Ageing Report"
+        description={
+          <>
             Export either <strong>A/R Ageing Summary</strong> or <strong>A/R Ageing Detail</strong>{" "}
             from QuickBooks to Excel and import it here. The app detects which report you uploaded.
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        exportSteps={[
+          "Reports → What you owe → A/R Ageing Summary or A/R Ageing Detail.",
+          "Export to Excel and upload here.",
+        ]}
+      />
 
-        <div className="space-y-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={SPREADSHEET_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-start gap-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {file ? <FileSpreadsheet className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
-            {file ? file.name : "Choose AR Ageing Summary or Detail export (.xls, .xlsx)"}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Use <strong>Summary</strong> for Standard Reports → A/R Aging. Use <strong>Detail</strong>{" "}
-            for Sales Performance and transaction-level locations.
-          </p>
-        </div>
+      <ImportDialogBody>
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={SPREADSHEET_IMPORT_ACCEPT}
+          file={file}
+          disabled={importing}
+          placeholder="Choose AR Ageing Summary or Detail export (.xls, .xlsx)"
+          onFileSelect={(selected) => setFile(selected)}
+        />
+        <ImportDialogTip>
+          Use <strong>Summary</strong> for Standard Reports → A/R Aging. Use <strong>Detail</strong>{" "}
+          for Sales Performance and transaction-level locations.
+        </ImportDialogTip>
+      </ImportDialogBody>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleImport} disabled={!file || importing}>
-            {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Import report
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!file}
+        importing={importing}
+        importLabel="Import report"
+      />
+    </ImportDialog>
   );
 }

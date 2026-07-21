@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Plug, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SupabaseHealthResponse } from "@/app/api/supabase/health/route";
 import { cn } from "@/lib/utils";
 
@@ -60,100 +59,90 @@ export function SupabaseConnectionStatus() {
   const needsTables = isOk && status?.tablesReady === false;
 
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div
-              className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                loading
-                  ? "bg-muted text-muted-foreground"
-                  : isOk
-                    ? "bg-emerald-500/10 text-emerald-700"
-                    : "bg-destructive/10 text-destructive",
-              )}
-            >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : isOk ? (
-                <CheckCircle2 className="h-5 w-5" />
-              ) : (
-                <XCircle className="h-5 w-5" />
-              )}
-            </div>
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Plug className="h-4 w-4 text-muted-foreground" />
-                Supabase connection
-              </CardTitle>
-              <CardDescription className="mt-1">
-                {loading
-                  ? "Checking connection…"
-                  : status?.message ?? "Connection status unknown."}
-              </CardDescription>
-            </div>
+    <div className="rounded-xl border border-border/80 bg-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className={cn(
+              "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+              loading
+                ? "bg-muted text-muted-foreground"
+                : isOk
+                  ? "bg-emerald-500/10 text-emerald-700"
+                  : "bg-destructive/10 text-destructive",
+            )}
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isOk ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <XCircle className="h-4 w-4" />
+            )}
           </div>
+          <div className="min-w-0 space-y-0.5">
+            <p className="text-sm font-semibold">Supabase connection</p>
+            <p className="text-sm text-muted-foreground">
+              {loading ? "Checking connection…" : (status?.message ?? "Connection status unknown.")}
+            </p>
+            {status?.projectUrl ? (
+              <p className="truncate font-mono text-[11px] text-muted-foreground">
+                {status.projectUrl}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 shrink-0"
+          onClick={() => void checkConnection()}
+          disabled={loading}
+        >
+          Test again
+        </Button>
+      </div>
+
+      {status?.error ? (
+        <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {status.error}
+        </p>
+      ) : null}
+
+      {!loading && !status?.configured ? (
+        <div className="mt-3 rounded-md border bg-muted/40 px-3 py-3 text-sm text-muted-foreground">
+          <p className="mb-2 font-medium text-foreground">Setup steps</p>
+          <ol className="list-decimal space-y-1 pl-4">
+            <li>Create a project at supabase.com</li>
+            <li>Copy the Project URL and anon key from Settings → API</li>
+            <li>
+              Add them to <code className="text-xs">.env.local</code> in the project root
+            </li>
+            <li>
+              Restart <code className="text-xs">npm run dev</code>
+            </li>
+          </ol>
+        </div>
+      ) : null}
+
+      {needsTables ? (
+        <div className="mt-3 space-y-2">
+          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground">
+            Connected, but the <code className="text-xs">chart_of_accounts</code> table does not
+            exist yet.
+          </p>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="shrink-0"
-            onClick={() => void checkConnection()}
-            disabled={loading}
+            disabled={creatingTables}
+            onClick={() => void handleCreateTables()}
           >
-            Test again
+            {creatingTables ? "Creating tables…" : "Create database tables"}
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {status?.projectUrl ? (
-          <p className="text-muted-foreground break-all">
-            Project:{" "}
-            <span className="font-mono text-foreground">{status.projectUrl}</span>
-          </p>
-        ) : null}
-
-        {status?.error ? (
-          <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive">
-            {status.error}
-          </p>
-        ) : null}
-
-        {!loading && !status?.configured ? (
-          <div className="rounded-md border bg-muted/40 px-3 py-3 text-muted-foreground space-y-2">
-            <p className="font-medium text-foreground">Setup steps</p>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>Create a project at supabase.com</li>
-              <li>
-                Copy the Project URL and anon key from Settings → API
-              </li>
-              <li>
-                Add them to <code className="text-xs">.env.local</code> in the project root
-              </li>
-              <li>Restart <code className="text-xs">npm run dev</code></li>
-            </ol>
-          </div>
-        ) : null}
-
-        {needsTables ? (
-          <div className="space-y-2">
-            <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-muted-foreground">
-              Connected, but the <code className="text-xs">chart_of_accounts</code> table does not
-              exist yet.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={creatingTables}
-              onClick={() => void handleCreateTables()}
-            >
-              {creatingTables ? "Creating tables…" : "Create database tables"}
-            </Button>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+      ) : null}
+    </div>
   );
 }

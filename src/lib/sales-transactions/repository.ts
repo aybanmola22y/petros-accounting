@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { MockSalesTransaction } from "@/lib/mock-data/sales";
 import {
+  getSalesTransactionLocationFromDb,
   listSalesTransactionLocationsFromDb,
   upsertSalesTransactionLocationsInDb,
 } from "./locations-repository";
@@ -22,13 +23,14 @@ function mockSalesStatusToDb(txn: Pick<MockSalesTransaction, "status" | "qbStatu
 }
 
 function mockSalesTransactionToInsert(
-  input: Omit<MockSalesTransaction, "id">,
+  input: Omit<MockSalesTransaction, "id"> & { id?: string },
   sortOrder: number,
-): SalesTransactionInsert {
+): SalesTransactionInsert & { id?: string } {
   const parsedDate = parseTransactionDate(input.date);
   const isoDate = parsedDate ? toIsoDate(parsedDate) : input.date;
 
   return {
+    ...(input.id ? { id: input.id } : {}),
     transaction_date: isoDate,
     transaction_type: input.type,
     reference_number: input.number.trim() || null,
@@ -43,6 +45,10 @@ function mockSalesTransactionToInsert(
 
 const TABLE = "sales_transactions";
 const INSERT_BATCH_SIZE = 500;
+
+/** Columns needed to build MockSalesTransaction — skips timestamps we don't use in lists. */
+const SALES_LIST_COLUMNS =
+  "id, transaction_date, transaction_type, reference_number, customer_name, memo, income_account_name, amount, status, sort_order, created_at";
 
 export type ParsedSalesTransactionImportPayload = {
   rowNumber: number;
@@ -65,6 +71,26 @@ export async function listSalesTransactionsFromDb(): Promise<MockSalesTransactio
   return rows.map((row) => salesTransactionRowToMock(row, locationByNumber));
 }
 
+export async function getSalesTransactionByIdFromDb(
+  id: string,
+): Promise<MockSalesTransaction | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select(SALES_LIST_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const row = data as SalesTransactionRow;
+  const number = row.reference_number?.trim() ?? "";
+  const location = number ? await getSalesTransactionLocationFromDb(number) : undefined;
+  const locationByNumber =
+    number && location ? new Map([[number, location]]) : undefined;
+  return salesTransactionRowToMock(row, locationByNumber);
+}
+
 async function listSalesTransactionRowsFromDb(): Promise<SalesTransactionRow[]> {
   const supabase = createSupabaseAdminClient();
   const pageSize = 1000;
@@ -74,7 +100,7 @@ async function listSalesTransactionRowsFromDb(): Promise<SalesTransactionRow[]> 
   while (true) {
     const { data, error } = await supabase
       .from(TABLE)
-      .select("*")
+      .select(SALES_LIST_COLUMNS)
       .order("sort_order", { ascending: true })
       .order("transaction_date", { ascending: false })
       .range(offset, offset + pageSize - 1);
@@ -87,6 +113,18 @@ async function listSalesTransactionRowsFromDb(): Promise<SalesTransactionRow[]> 
   }
 
   return allRows;
+}
+
+async function nextSalesSortOrder(): Promise<number> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Number((data as { sort_order?: number } | null)?.sort_order ?? 0) + 1;
 }
 
 export type ImportSalesTransactionsDbResult = {
@@ -168,20 +206,22 @@ export async function importSalesTransactionsInDb(
 }
 
 export async function createSalesTransactionInDb(
-  input: Omit<MockSalesTransaction, "id">,
+  input: Omit<MockSalesTransaction, "id"> & { id?: string },
 ): Promise<MockSalesTransaction> {
   const supabase = createSupabaseAdminClient();
-  const existing = await listSalesTransactionRowsFromDb();
-  const sortOrder = existing.length + 1;
+  const sortOrder = await nextSalesSortOrder();
 
   const { data, error } = await supabase
     .from(TABLE)
     .insert(mockSalesTransactionToInsert(input, sortOrder))
-    .select("*")
+    .select(SALES_LIST_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message);
-  const locationByNumber = await listSalesTransactionLocationsFromDb();
+  const locationByNumber =
+    input.location?.trim() && input.number.trim()
+      ? new Map([[input.number.trim(), input.location.trim()]])
+      : undefined;
   return salesTransactionRowToMock(data as SalesTransactionRow, locationByNumber);
 }
 
@@ -217,12 +257,16 @@ export async function updateSalesTransactionInDb(
     .from(TABLE)
     .update(update)
     .eq("id", id)
-    .select("*")
+    .select(SALES_LIST_COLUMNS)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!data) return null;
-  const locationByNumber = await listSalesTransactionLocationsFromDb();
+
+  const number = (data as SalesTransactionRow).reference_number?.trim() ?? "";
+  const location = number ? await getSalesTransactionLocationFromDb(number) : undefined;
+  const locationByNumber =
+    number && location ? new Map([[number, location]]) : undefined;
   return salesTransactionRowToMock(data as SalesTransactionRow, locationByNumber);
 }
 
@@ -238,13 +282,28 @@ export async function deleteSalesTransactionsInDb(ids: string[]): Promise<number
 }
 
 export async function getNextPaymentNumberFromDb(): Promise<string> {
-  const transactions = await listSalesTransactionsFromDb();
+  const supabase = createSupabaseAdminClient();
+  const pageSize = 1000;
+  let offset = 0;
   let max = 0;
-  for (const txn of transactions) {
-    if (txn.type !== "Payment") continue;
-    const n = parseInt(txn.number.replace(/\D/g, ""), 10);
-    if (!Number.isNaN(n) && n > max) max = n;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("reference_number")
+      .eq("transaction_type", "Payment")
+      .range(offset, offset + pageSize - 1);
+
+    if (error) throw new Error(error.message);
+    const batch = (data ?? []) as Array<{ reference_number: string | null }>;
+    for (const row of batch) {
+      const n = parseInt((row.reference_number ?? "").replace(/\D/g, ""), 10);
+      if (!Number.isNaN(n) && n > max) max = n;
+    }
+    if (batch.length < pageSize) break;
+    offset += pageSize;
   }
+
   return `PMT-${max + 1}`;
 }
 

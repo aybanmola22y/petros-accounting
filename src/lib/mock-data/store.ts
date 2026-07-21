@@ -59,6 +59,7 @@ import {
   clearPersistedSnapshot,
   loadPersistedSnapshot,
   persistSnapshot,
+  schedulePersistSnapshot,
 } from "./store-persistence";
 import {
   SEED_PAID_INVOICES,
@@ -185,10 +186,31 @@ let cachedUnpaidBillsVersion = -1;
 let cachedPaidBills: PaidBill[] | null = null;
 let cachedPaidBillsVersion = -1;
 
+let storeBatchDepth = 0;
+let storeBatchDirty = false;
+
+/** Coalesce multiple store writes into one subscriber notification. */
+export function beginStoreBatch() {
+  storeBatchDepth += 1;
+}
+
+export function endStoreBatch() {
+  storeBatchDepth = Math.max(0, storeBatchDepth - 1);
+  if (storeBatchDepth === 0 && storeBatchDirty) {
+    storeBatchDirty = false;
+    schedulePersistSnapshot(snapshot);
+    listeners.forEach((listener) => listener());
+  }
+}
+
 function emit() {
   snapshot = { ...snapshot, version: snapshot.version + 1 };
-  persistSnapshot(snapshot);
-  listeners.forEach((l) => l());
+  if (storeBatchDepth > 0) {
+    storeBatchDirty = true;
+    return;
+  }
+  schedulePersistSnapshot(snapshot);
+  listeners.forEach((listener) => listener());
 }
 
 export function subscribeMockStore(listener: () => void) {
@@ -531,6 +553,19 @@ export function addSalesTransaction(input: Omit<MockSalesTransaction, "id">) {
   emit();
 }
 
+/** Insert or replace a sales transaction that already has a server id. */
+export function upsertSalesTransactionInStore(txn: MockSalesTransaction) {
+  const index = snapshot.salesTransactions.findIndex((t) => t.id === txn.id);
+  if (index === -1) {
+    snapshot.salesTransactions = [txn, ...(snapshot.salesTransactions ?? [])];
+  } else {
+    const next = [...snapshot.salesTransactions];
+    next[index] = txn;
+    snapshot.salesTransactions = next;
+  }
+  emit();
+}
+
 export function updateSalesTransaction(
   id: string,
   patch: Partial<Omit<MockSalesTransaction, "id">>,
@@ -606,6 +641,20 @@ export function addExpense(input: Omit<MockExpenseTransaction, "id">) {
     recordedAt,
   });
   touchMaxExpenseNumber(input.number);
+  emit();
+}
+
+/** Insert or replace an expense that already has a server id. */
+export function upsertExpenseInStore(expense: MockExpenseTransaction) {
+  const index = snapshot.expenses.findIndex((e) => e.id === expense.id);
+  if (index === -1) {
+    snapshot.expenses = [expense, ...snapshot.expenses];
+  } else {
+    const next = [...snapshot.expenses];
+    next[index] = expense;
+    snapshot.expenses = next;
+  }
+  touchMaxExpenseNumber(expense.number);
   emit();
 }
 

@@ -55,9 +55,9 @@ import {
 } from "@/lib/report-date-utils";
 import { cn } from "@/lib/utils";
 
-/** Five proportional columns so metadata spreads across the full row, not clustered on the right. */
+/** Columns: name | created by | modified | period | action */
 const REPORT_LIST_GRID =
-  "lg:grid lg:grid-cols-[minmax(16rem,1.5fr)_1fr_1fr_1.1fr_1fr] lg:items-center lg:gap-x-10";
+  "lg:grid lg:grid-cols-[minmax(18rem,2fr)_9rem_8rem_minmax(12rem,1fr)_auto] lg:items-center lg:gap-x-6";
 
 function slugId(name: string) {
   return name
@@ -88,18 +88,18 @@ function ReportPreviewSplitButton({
   return (
     <div className="inline-flex shrink-0">
       <Button
-        variant="default"
+        variant="outline"
         size="sm"
-        className="h-9 gap-1.5 rounded-r-none border-r border-primary-foreground/20 px-3"
+        className="h-9 gap-1.5 rounded-r-none border-r-0 px-3"
         onClick={onPreview}
       >
-        <Eye className="h-4 w-4" />
+        <Eye className="h-3.5 w-3.5" />
         Preview
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="default"
+            variant="outline"
             size="sm"
             className="h-9 rounded-l-none px-2"
             aria-label={`More actions for ${report.name}`}
@@ -342,19 +342,16 @@ export function ManagementReports() {
   }, [editReport, newReportName, toast]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="w-full space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Reports
-          </p>
           <h1 className="text-2xl font-semibold tracking-tight">Management Reports</h1>
-          <p className="text-sm text-muted-foreground max-w-xl">
+          <p className="max-w-3xl text-sm text-muted-foreground">
             Curated dashboards for leadership reviews. Pick a period and preview any report.
           </p>
         </div>
         <Button
-          className="shrink-0 gap-2 shadow-sm"
+          className="h-9 shrink-0 gap-2"
           onClick={() => router.push("/reports/management/new")}
         >
           <Plus className="h-4 w-4" />
@@ -362,64 +359,63 @@ export function ManagementReports() {
         </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border/80 bg-border/70">
         {[
           { label: "Available reports", value: String(reports.length) },
           { label: "Categories", value: String(new Set(reports.map((r) => r.category)).size) },
           { label: "Default period", value: "This year" },
         ].map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border bg-card px-4 py-3 shadow-sm"
-          >
-            <p className="text-xs text-muted-foreground">{stat.label}</p>
-            <p className="mt-1 text-lg font-semibold tabular-nums">{stat.value}</p>
+          <div key={stat.label} className="bg-white px-4 py-3 sm:px-5">
+            <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight">{stat.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="w-full space-y-2">
-          <div
-            className={cn(
-              "hidden px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground lg:grid",
-              REPORT_LIST_GRID,
-            )}
-          >
-            <span>Name</span>
-            <span className="lg:pl-1">Created by</span>
-            <span>Last modified</span>
-            <span>Report period</span>
-            <span className="text-right lg:pr-1">Action</span>
-          </div>
+      <section className="overflow-hidden rounded-xl border border-border/80 bg-white">
+        <div
+          className={cn(
+            "hidden border-b border-border/70 bg-muted/30 px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground lg:grid lg:px-5",
+            REPORT_LIST_GRID,
+          )}
+        >
+          <span>Name</span>
+          <span>Created by</span>
+          <span>Last modified</span>
+          <span>Report period</span>
+          <span className="text-right">Action</span>
+        </div>
 
+        <div className="divide-y divide-border/70">
           {reports.map((report) => (
             <article
               key={report.id}
               className={cn(
-                "group space-y-3 rounded-xl border bg-card p-4 shadow-sm transition-all",
-                "hover:border-primary/25 hover:shadow-md lg:space-y-0",
+                "space-y-3 px-4 py-4 transition-colors hover:bg-muted/20 lg:space-y-0 lg:px-5",
                 REPORT_LIST_GRID,
               )}
             >
-              <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 items-start gap-3">
                 <ManagementReportLogo report={report} />
                 <div className="min-w-0 space-y-1">
-                  <h3 className="font-semibold leading-snug text-foreground">
-                    {report.name}
-                  </h3>
-                  {report.isBuiltIn ? (
-                    <Badge
-                      variant="outline"
-                      className="w-fit border-sky-200 bg-sky-50 px-1.5 py-0 font-semibold uppercase tracking-wide text-[10px] text-sky-800"
-                    >
-                      PetroBook report
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="w-fit font-normal text-xs">
-                      Custom
-                    </Badge>
-                  )}
-                  <p className="text-sm leading-snug text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold leading-snug text-foreground">
+                      {report.name}
+                    </h3>
+                    {report.isBuiltIn ? (
+                      <Badge
+                        variant="outline"
+                        className="w-fit border-sky-200 bg-sky-50 px-1.5 py-0 text-[10px] font-semibold uppercase tracking-wide text-sky-800"
+                      >
+                        PetroBook
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="w-fit text-[10px] font-medium">
+                        Custom
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
                     {report.description}
                   </p>
                 </div>
@@ -427,29 +423,27 @@ export function ManagementReports() {
 
               <dl className="grid grid-cols-2 gap-4 border-t border-border/50 pt-3 text-sm lg:hidden">
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     Created by
                   </dt>
                   <dd className="mt-0.5 text-foreground">{report.createdBy}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     Last modified
                   </dt>
                   <dd className="mt-0.5 tabular-nums text-foreground">{report.lastModified}</dd>
                 </div>
               </dl>
 
-              <p className="hidden text-sm text-foreground lg:block lg:pl-1">
-                {report.createdBy}
-              </p>
-              <p className="hidden text-sm tabular-nums text-foreground lg:block">
+              <p className="hidden text-sm text-muted-foreground lg:block">{report.createdBy}</p>
+              <p className="hidden text-sm tabular-nums text-muted-foreground lg:block">
                 {report.lastModified}
               </p>
 
               <div className="flex items-center gap-2 border-t border-border/50 pt-3 lg:contents lg:border-0 lg:pt-0">
                 <div className="min-w-0 flex-1 space-y-2 lg:col-start-4 lg:w-full">
-                  <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-muted-foreground lg:sr-only">
+                  <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground lg:sr-only">
                     Report period
                   </span>
                   <ManagementReportPeriodSelect
@@ -486,7 +480,7 @@ export function ManagementReports() {
                   ) : null}
                 </div>
 
-                <div className="shrink-0 lg:col-start-5 lg:flex lg:w-full lg:justify-end lg:pr-1">
+                <div className="shrink-0 lg:col-start-5 lg:flex lg:w-full lg:justify-end">
                   <ReportPreviewSplitButton
                     report={report}
                     onPreview={() => openPreview(report.id)}
@@ -503,7 +497,8 @@ export function ManagementReports() {
               </div>
             </article>
           ))}
-      </div>
+        </div>
+      </section>
 
       {previewSnapshot ? (
         <ManagementReportBuilderPreviewDialog

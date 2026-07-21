@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { AppLogo } from "@/components/app-logo";
-import { LoginCharacters, type LoginMood } from "@/components/login-characters";
+import { LoginHeroLottie } from "@/components/login-hero-lottie";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,43 +40,21 @@ export function LoginView() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [activeField, setActiveField] = useState<"email" | "password" | null>(null);
-  const [nodding, setNodding] = useState(false);
-  const [nodToken, setNodToken] = useState(0);
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  const emailValue = watch("email");
-  const passwordValue = watch("password");
-
-  const resolvedMood: LoginMood =
-    activeField === "password"
-      ? "shy"
-      : activeField === "email"
-        ? "amazed"
-        : passwordValue
-          ? "shy"
-          : emailValue
-            ? "amazed"
-            : "idle";
-
   async function onSubmit(values: LoginFormValues) {
     setError(null);
-    setNodding(false);
     const result = await signIn(values.email, values.password);
     if (!result.ok) {
       setError(result.message);
-      setNodding(true);
-      setNodToken((t) => t + 1);
-      window.setTimeout(() => setNodding(false), 1650);
       return;
     }
     const from = searchParams.get("from");
@@ -84,21 +62,13 @@ export function LoginView() {
     router.refresh();
   }
 
-  const emailRegister = register("email");
-  const passwordRegister = register("password");
-
   return (
     <div
       className="flex h-dvh w-full overflow-hidden bg-[#ebebef]"
       style={{ fontFamily: "var(--font-login-sans), system-ui, sans-serif" }}
     >
-      <aside className="relative hidden min-h-0 w-[48%] shrink-0 overflow-hidden bg-[#e6e6ea] lg:block">
-        <LoginCharacters
-          key={nodToken}
-          className="absolute inset-0"
-          mood={resolvedMood}
-          nodding={nodding}
-        />
+      <aside className="relative hidden min-h-0 w-[48%] shrink-0 overflow-hidden bg-[#ebebef] lg:block">
+        <LoginHeroLottie className="absolute inset-0" />
       </aside>
 
       <main className="relative flex min-h-0 w-full flex-1 flex-col overflow-y-auto bg-white lg:w-[52%]">
@@ -122,13 +92,8 @@ export function LoginView() {
             </div>
 
             <div className="mb-8 lg:hidden">
-              <div className="relative h-28 overflow-hidden rounded-2xl bg-[#e6e6ea]">
-                <LoginCharacters
-                  key={`m-${nodToken}`}
-                  className="absolute inset-0 scale-[0.85]"
-                  mood={resolvedMood}
-                  nodding={nodding}
-                />
+              <div className="relative flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-[#ebebef]">
+                <LoginHeroLottie className="scale-[0.72]" />
               </div>
             </div>
 
@@ -156,12 +121,7 @@ export function LoginView() {
                   placeholder="name@company.com"
                   aria-invalid={Boolean(errors.email)}
                   className={fieldClass}
-                  {...emailRegister}
-                  onFocus={() => setActiveField("email")}
-                  onBlur={(e) => {
-                    emailRegister.onBlur(e);
-                    setActiveField((current) => (current === "email" ? null : current));
-                  }}
+                  {...register("email")}
                 />
                 {errors.email && (
                   <p className="text-[13px] text-red-600">{errors.email.message}</p>
@@ -183,14 +143,7 @@ export function LoginView() {
                     placeholder="Enter your password"
                     aria-invalid={Boolean(errors.password)}
                     className={cn(fieldClass, "pr-11")}
-                    {...passwordRegister}
-                    onFocus={() => setActiveField("password")}
-                    onBlur={(e) => {
-                      passwordRegister.onBlur(e);
-                      setActiveField((current) =>
-                        current === "password" ? null : current,
-                      );
-                    }}
+                    {...register("password")}
                   />
                   <button
                     type="button"

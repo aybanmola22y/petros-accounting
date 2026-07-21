@@ -15,7 +15,14 @@ export async function GET() {
     await repairImportedExpenseDateTimezoneIfNeeded();
     const expenses = await listExpenseTransactionsFromDb();
     replaceExpensesInStore(expenses);
-    return NextResponse.json({ expenses, count: expenses.length });
+    return NextResponse.json(
+      { expenses, count: expenses.length },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        },
+      },
+    );
   } catch (error) {
     return NextResponse.json(
       {
@@ -50,8 +57,13 @@ export async function PUT(request: Request) {
     }
 
     const result = await importExpenseTransactionsInDb(body.rows, { replace: body.replace });
-    const expenses = await listExpenseTransactionsFromDb();
-    replaceExpensesInStore(expenses);
+    // Prefer imported rows when replace was used; otherwise reload once.
+    if (body.replace) {
+      replaceExpensesInStore(result.added);
+    } else {
+      const expenses = await listExpenseTransactionsFromDb();
+      replaceExpensesInStore(expenses);
+    }
 
     return NextResponse.json(result);
   } catch (error) {
@@ -72,9 +84,7 @@ export async function POST(request: Request) {
     }
 
     const expense = await createExpenseTransactionInDb(body.expense);
-    const expenses = await listExpenseTransactionsFromDb();
-    replaceExpensesInStore(expenses);
-    return NextResponse.json({ expense, expenses });
+    return NextResponse.json({ expense });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create expense." },
@@ -99,9 +109,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Expense not found." }, { status: 404 });
     }
 
-    const expenses = await listExpenseTransactionsFromDb();
-    replaceExpensesInStore(expenses);
-    return NextResponse.json({ expense, expenses });
+    return NextResponse.json({ expense });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update expense." },
@@ -118,9 +126,7 @@ export async function DELETE(request: Request) {
     }
 
     await deleteExpenseTransactionsInDb(body.ids);
-    const expenses = await listExpenseTransactionsFromDb();
-    replaceExpensesInStore(expenses);
-    return NextResponse.json({ ok: true, expenses });
+    return NextResponse.json({ ok: true, ids: body.ids });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete expenses." },

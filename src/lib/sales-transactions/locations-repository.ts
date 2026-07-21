@@ -42,6 +42,33 @@ export async function listSalesTransactionLocationsFromDb(): Promise<Map<string,
   return map;
 }
 
+export async function getSalesTransactionLocationFromDb(
+  referenceNumber: string,
+): Promise<string | undefined> {
+  const trimmed = referenceNumber.trim();
+  if (!trimmed) return undefined;
+
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("location")
+    .eq("reference_number", trimmed)
+    .maybeSingle();
+
+  if (error) {
+    if (
+      error.code === "PGRST205" ||
+      /does not exist|schema cache/i.test(error.message)
+    ) {
+      return undefined;
+    }
+    throw new Error(error.message);
+  }
+
+  const location = String(data?.location ?? "").trim();
+  return location || undefined;
+}
+
 export async function replaceSalesTransactionLocationsInDb(
   locations: ReadonlyMap<string, string>,
 ): Promise<number> {

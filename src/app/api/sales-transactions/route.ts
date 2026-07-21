@@ -14,7 +14,14 @@ export async function GET() {
   try {
     const salesTransactions = await listSalesTransactionsFromDb();
     replaceSalesTransactionsInStore(salesTransactions);
-    return NextResponse.json({ salesTransactions, count: salesTransactions.length });
+    return NextResponse.json(
+      { salesTransactions, count: salesTransactions.length },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        },
+      },
+    );
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to load sales transactions." },
@@ -35,6 +42,7 @@ export async function PUT(request: Request) {
     }
 
     const result = await importSalesTransactionsInDb(body.rows, { replace: body.replace });
+    // One full reload after bulk import is expected; mutations below avoid this.
     const salesTransactions = await listSalesTransactionsFromDb();
     replaceSalesTransactionsInStore(salesTransactions);
 
@@ -50,16 +58,14 @@ export async function PUT(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
-      transaction?: Omit<MockSalesTransaction, "id">;
+      transaction?: Omit<MockSalesTransaction, "id"> & { id?: string };
     };
     if (!body.transaction) {
       return NextResponse.json({ error: "Sales transaction payload is required." }, { status: 400 });
     }
 
     const salesTransaction = await createSalesTransactionInDb(body.transaction);
-    const salesTransactions = await listSalesTransactionsFromDb();
-    replaceSalesTransactionsInStore(salesTransactions);
-    return NextResponse.json({ salesTransaction, salesTransactions });
+    return NextResponse.json({ salesTransaction });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create sales transaction." },
@@ -87,9 +93,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Sales transaction not found." }, { status: 404 });
     }
 
-    const salesTransactions = await listSalesTransactionsFromDb();
-    replaceSalesTransactionsInStore(salesTransactions);
-    return NextResponse.json({ salesTransaction, salesTransactions });
+    return NextResponse.json({ salesTransaction });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update sales transaction." },
@@ -106,9 +110,7 @@ export async function DELETE(request: Request) {
     }
 
     await deleteSalesTransactionsInDb(body.ids);
-    const salesTransactions = await listSalesTransactionsFromDb();
-    replaceSalesTransactionsInStore(salesTransactions);
-    return NextResponse.json({ ok: true, salesTransactions });
+    return NextResponse.json({ ok: true, ids: body.ids });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete sales transactions." },

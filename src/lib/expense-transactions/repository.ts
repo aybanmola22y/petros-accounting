@@ -13,6 +13,9 @@ import type { MockExpenseTransaction } from "@/lib/mock-data/expenses";
 const TABLE = "expense_transactions";
 const INSERT_BATCH_SIZE = 500;
 
+const EXPENSE_LIST_COLUMNS =
+  "id, transaction_date, transaction_type, reference_number, payee, category, category_account_id, total_before_tax, sales_tax, total, is_split, payment_account_id, status, sort_order";
+
 export async function listExpenseTransactionsFromDb(): Promise<MockExpenseTransaction[]> {
   const supabase = createSupabaseAdminClient();
   const pageSize = 1000;
@@ -22,7 +25,7 @@ export async function listExpenseTransactionsFromDb(): Promise<MockExpenseTransa
   while (true) {
     const { data, error } = await supabase
       .from(TABLE)
-      .select("*")
+      .select(EXPENSE_LIST_COLUMNS)
       .order("sort_order", { ascending: true })
       .order("transaction_date", { ascending: false })
       .range(offset, offset + pageSize - 1);
@@ -35,6 +38,18 @@ export async function listExpenseTransactionsFromDb(): Promise<MockExpenseTransa
   }
 
   return allRows.map(expenseTransactionRowToMock);
+}
+
+async function nextExpenseSortOrder(): Promise<number> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Number((data as { sort_order?: number } | null)?.sort_order ?? 0) + 1;
 }
 
 export type ImportExpenseTransactionsDbResult = {
@@ -121,7 +136,10 @@ export async function importExpenseTransactionsInDb(
   const added: MockExpenseTransaction[] = [];
   for (let i = 0; i < toInsert.length; i += INSERT_BATCH_SIZE) {
     const batch = toInsert.slice(i, i + INSERT_BATCH_SIZE);
-    const { data, error } = await supabase.from(TABLE).insert(batch).select("*");
+    const { data, error } = await supabase
+      .from(TABLE)
+      .insert(batch)
+      .select(EXPENSE_LIST_COLUMNS);
     if (error) throw new Error(error.message);
     added.push(...((data ?? []) as ExpenseTransactionRow[]).map(expenseTransactionRowToMock));
   }
@@ -133,8 +151,7 @@ export async function createExpenseTransactionInDb(
   input: Omit<MockExpenseTransaction, "id">,
 ): Promise<MockExpenseTransaction> {
   const supabase = createSupabaseAdminClient();
-  const existing = await listExpenseTransactionsFromDb();
-  const sortOrder = existing.length + 1;
+  const sortOrder = await nextExpenseSortOrder();
 
   const insert = parsedExpenseToInsert({
         rowNumber: sortOrder,
@@ -158,7 +175,7 @@ export async function createExpenseTransactionInDb(
   const { data, error } = await supabase
     .from(TABLE)
     .insert(insert)
-    .select("*")
+    .select(EXPENSE_LIST_COLUMNS)
     .single();
 
   if (error) throw new Error(error.message);
@@ -198,7 +215,7 @@ export async function updateExpenseTransactionInDb(
     .from(TABLE)
     .update(update)
     .eq("id", id)
-    .select("*")
+    .select(EXPENSE_LIST_COLUMNS)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
@@ -217,12 +234,27 @@ export async function deleteExpenseTransactionsInDb(ids: string[]): Promise<numb
 }
 
 export async function getNextExpenseNumberFromDb(): Promise<string> {
-  const expenses = await listExpenseTransactionsFromDb();
+  const supabase = createSupabaseAdminClient();
+  const pageSize = 1000;
+  let offset = 0;
   let max = 0;
-  for (const expense of expenses) {
-    const n = parseInt(expense.number.replace(/\D/g, ""), 10);
-    if (!Number.isNaN(n) && n > max) max = n;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("reference_number")
+      .range(offset, offset + pageSize - 1);
+
+    if (error) throw new Error(error.message);
+    const batch = (data ?? []) as Array<{ reference_number: string | null }>;
+    for (const row of batch) {
+      const n = parseInt((row.reference_number ?? "").replace(/\D/g, ""), 10);
+      if (!Number.isNaN(n) && n > max) max = n;
+    }
+    if (batch.length < pageSize) break;
+    offset += pageSize;
   }
+
   return String(max + 1);
 }
 
@@ -240,9 +272,16 @@ async function expenseOptionalColumnExists(column: string): Promise<boolean> {
  * QuickBooks imports before Mar 2026 stored dates one day early in UTC+8 because
  * toISOString() was used. Shift imported rows forward one day once.
  */
+let expenseDateRepairSettled = false;
+
 export async function repairImportedExpenseDateTimezoneIfNeeded(): Promise<number> {
+  if (expenseDateRepairSettled) return 0;
+
   const hasRepairColumn = await expenseOptionalColumnExists("import_date_repaired");
-  if (!hasRepairColumn) return 0;
+  if (!hasRepairColumn) {
+    expenseDateRepairSettled = true;
+    return 0;
+  }
 
   const supabase = createSupabaseAdminClient();
   const pageSize = 500;
@@ -258,7 +297,10 @@ export async function repairImportedExpenseDateTimezoneIfNeeded(): Promise<numbe
 
     if (error) throw new Error(error.message);
     const batch = (data ?? []) as Array<{ id: string; transaction_date: string }>;
-    if (batch.length === 0) break;
+    if (batch.length === 0) {
+      expenseDateRepairSettled = true;
+      break;
+    }
 
     const updatePromises: Array<Promise<unknown>> = [];
     for (const row of batch) {

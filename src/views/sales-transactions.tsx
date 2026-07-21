@@ -746,6 +746,7 @@ export function SalesTransactions() {
       amount,
       balanceDue,
       lines: values.lines,
+      attachments: values.attachments,
     });
 
     setPage(1);

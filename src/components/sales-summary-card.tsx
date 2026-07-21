@@ -70,7 +70,7 @@ type SalesSummaryCardProps = {
 export function SalesSummaryCard({
   className,
 }: SalesSummaryCardProps) {
-  const transactions = useMockSales();
+  const transactions = useMockSales({ includeLines: false });
   const [period, setPeriod] = useState<SalesDashboardPeriod>("This month");
   const overviewHref = useMemo(
     () => salesOverviewHref({ period, basis: "Accrual" }),

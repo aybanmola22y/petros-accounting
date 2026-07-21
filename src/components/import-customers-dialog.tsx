@@ -1,17 +1,17 @@
 "use client";
 
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { FileSpreadsheet, Loader2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ImportDialog,
+  ImportDialogBody,
+  ImportDialogError,
+  ImportDialogFilePicker,
+  ImportDialogFooter,
+  ImportDialogHeader,
+  ImportDialogPreviewCard,
+  ImportDialogPreviewStat,
+  ImportDialogReplaceOption,
+} from "@/components/import-dialog-shell";
 import { useToast } from "@/hooks/use-toast";
 import {
   CUSTOMERS_IMPORT_ACCEPT,
@@ -180,117 +180,78 @@ export function ImportCustomersDialog({
   }, [preview, replace, existingCustomers.length, duplicateCount, importableCount]);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Import customers from QuickBooks</DialogTitle>
-        </DialogHeader>
+    <ImportDialog open={open} onOpenChange={handleOpenChange}>
+      <ImportDialogHeader
+        title="Import customers from QuickBooks"
+        exportSteps={[
+          "In QuickBooks: Sales & Get Paid → Customers & leads → Customers.",
+          "Export to Excel (Customers.xls).",
+          "Expected columns: Name, Company name, Street Address, City, State, Country, Zip, Phone, Email, Attachments, Open balance.",
+        ]}
+      />
 
-        <div className="space-y-4 py-1">
-          <div className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground space-y-2">
-            <p className="font-medium text-foreground">QuickBooks Online export</p>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>
-                In QuickBooks:{" "}
-                <span className="font-medium text-foreground">
-                  Sales &amp; Get Paid → Customers &amp; leads → Customers
-                </span>
-                .
-              </li>
-              <li>Export to Excel (Customers.xls).</li>
-              <li>
-                Expected columns: Name, Company name, Street Address, City, State, Country,
-                Zip, Phone, Email, Attachments, Open balance.
-              </li>
-            </ol>
-          </div>
+      <ImportDialogBody>
+        <ImportDialogReplaceOption
+          id="replace-customers"
+          label="Replace existing customers"
+          checked={replace}
+          onCheckedChange={setReplace}
+        />
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="replace-customers"
-              checked={replace}
-              onCheckedChange={(checked) => setReplace(checked === true)}
+        <ImportDialogFilePicker
+          fileInputRef={fileInputRef}
+          accept={CUSTOMERS_IMPORT_ACCEPT}
+          file={file}
+          parsing={parsing}
+          disabled={importing}
+          placeholder="Choose .xls, .xlsx, or .csv file"
+          hint="Supports QuickBooks customer exports"
+          onFileSelect={(selected) => void handleFileSelect(selected)}
+        />
+
+        {parseError ? <ImportDialogError message={parseError} /> : null}
+
+        {preview ? (
+          <ImportDialogPreviewCard>
+            <ImportDialogPreviewStat
+              title={
+                <>
+                  {preview.rows.length.toLocaleString()} customer
+                  {preview.rows.length === 1 ? "" : "s"} ready to import
+                </>
+              }
+              details={
+                <>
+                  <p>
+                    Sheet: {preview.sheetName} · header row {preview.headerRowNumber}
+                  </p>
+                  {invalidRows > 0 ? (
+                    <p className="text-amber-700">
+                      {invalidRows} row{invalidRows === 1 ? "" : "s"} skipped while reading the file
+                    </p>
+                  ) : null}
+                  <p className="tabular-nums">
+                    Open balance in file: ₱
+                    {previewTotalBalance.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </p>
+                  {importNote ? <p>{importNote}</p> : null}
+                </>
+              }
             />
-            <Label htmlFor="replace-customers" className="text-sm font-normal cursor-pointer">
-              Replace existing customers
-            </Label>
-          </div>
+          </ImportDialogPreviewCard>
+        ) : null}
+      </ImportDialogBody>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={CUSTOMERS_IMPORT_ACCEPT}
-            className="hidden"
-            onChange={(e) => void handleFileSelect(e.target.files?.[0] ?? null)}
-          />
-
-          <button
-            type="button"
-            className="flex min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-muted-foreground/35 bg-muted/10 px-4 py-6 text-center hover:bg-muted/30 transition-colors disabled:opacity-60"
-            disabled={parsing || importing}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {parsing ? (
-              <>
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <span className="text-sm font-medium">Reading spreadsheet…</span>
-              </>
-            ) : (
-              <>
-                <Upload className="h-6 w-6 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                  {file ? file.name : "Choose .xls, .xlsx, or .csv file"}
-                </span>
-              </>
-            )}
-          </button>
-
-          {parseError ? (
-            <p className="text-sm text-destructive">{parseError}</p>
-          ) : null}
-
-          {preview ? (
-            <div className="rounded-lg border bg-muted/10 px-4 py-3 text-sm space-y-1">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <FileSpreadsheet className="h-4 w-4 text-primary" />
-                {preview.rows.length.toLocaleString()} customers ready to import
-              </div>
-              <p className="text-muted-foreground">
-                Sheet: {preview.sheetName} · header row {preview.headerRowNumber}
-              </p>
-              {invalidRows > 0 ? (
-                <p className="text-muted-foreground">
-                  {invalidRows} row{invalidRows === 1 ? "" : "s"} skipped while reading the file
-                </p>
-              ) : null}
-              <p className="text-muted-foreground">
-                Open balance in file: ₱
-                {previewTotalBalance.toLocaleString("en-PH", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </p>
-              {importNote ? <p className="text-muted-foreground">{importNote}</p> : null}
-            </div>
-          ) : null}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={importing}>
-            Cancel
-          </Button>
-          <Button onClick={() => void handleImport()} disabled={!preview || importing || importableCount === 0}>
-            {importing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Importing…
-              </>
-            ) : (
-              `Import ${importableCount > 0 ? importableCount.toLocaleString() : ""} customers`
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <ImportDialogFooter
+        onCancel={() => handleOpenChange(false)}
+        onImport={() => void handleImport()}
+        importDisabled={!preview || importableCount === 0}
+        importing={importing}
+        importLabel={`Import ${importableCount > 0 ? importableCount.toLocaleString() : ""} customers`}
+      />
+    </ImportDialog>
   );
 }

@@ -126,10 +126,19 @@ export async function listGeneralLedgerRowsForAccount(
   accountId: string,
 ): Promise<{ importExists: boolean; periodLabel: string; rows: GeneralLedgerAccountRow[] }> {
   const supabase = createSupabaseAdminClient();
-  const rows: GeneralLedgerAccountRow[] = [];
-  let offset = 0;
+  const chartAccounts = await listChartAccountsFromDb();
+  const account = chartAccounts.find((row) => row.id === accountId);
+  const rowsById = new Map<string, GeneralLedgerAccountRow>();
   let periodLabel = "All Dates";
 
+  const ingest = (batch: GeneralLedgerRow[]) => {
+    for (const row of batch) {
+      if (row.period_label) periodLabel = row.period_label;
+      rowsById.set(row.id, rowToAccountRow(row));
+    }
+  };
+
+  let offset = 0;
   while (true) {
     const { data, error } = await supabase
       .from(TABLE)
@@ -146,13 +155,62 @@ export async function listGeneralLedgerRowsForAccount(
     }
 
     const batch = (data ?? []) as GeneralLedgerRow[];
-    for (const row of batch) {
-      if (row.period_label) periodLabel = row.period_label;
-      rows.push(rowToAccountRow(row));
-    }
+    ingest(batch);
     if (batch.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
   }
+
+  // Recover rows that failed account matching at import time (account_id null) but
+  // clearly belong to this chart account by number / label.
+  if (account) {
+    const matcher = buildGeneralLedgerAccountMatcher(chartAccounts);
+    const labelCandidates = new Set<string>();
+    if (account.number.trim()) {
+      labelCandidates.add(`${account.number} ${account.name}`.trim());
+      labelCandidates.add(account.number.trim());
+    }
+    labelCandidates.add(account.name.trim());
+
+    for (const label of labelCandidates) {
+      offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from(TABLE)
+          .select("*")
+          .is("account_id", null)
+          .ilike("account_label", label)
+          .order("sort_order", { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (error) throw new Error(error.message);
+        const batch = (data ?? []) as GeneralLedgerRow[];
+        const matched = batch.filter((row) => matcher(row.account_label) === accountId);
+        ingest(matched);
+        if (batch.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
+      }
+    }
+
+    // Broader fallback: any null-linked row whose label resolves to this account.
+    if (account.number.trim()) {
+      offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from(TABLE)
+          .select("*")
+          .is("account_id", null)
+          .ilike("account_label", `%${account.number.trim()}%`)
+          .order("sort_order", { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (error) throw new Error(error.message);
+        const batch = (data ?? []) as GeneralLedgerRow[];
+        ingest(batch.filter((row) => matcher(row.account_label) === accountId));
+        if (batch.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
+      }
+    }
+  }
+
+  const rows = [...rowsById.values()].sort((a, b) => a.sortOrder - b.sortOrder);
 
   // The General Ledger export omits the Class/Location column, but A/R Aging
   // Detail provides it keyed by reference number. Backfill it when missing.
