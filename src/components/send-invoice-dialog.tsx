@@ -55,6 +55,10 @@ export type SendInvoicePayload = {
   shippingAmount?: number;
   depositEnabled?: boolean;
   depositAmount?: number;
+  /** Outstanding balance (e.g. after partial payment). Prefer this over recalculated totals. */
+  balanceDueOverride?: number;
+  /** Original invoice total — used for partial-payment reminder wording. */
+  invoiceTotalOverride?: number;
 };
 
 export type SendInvoiceDialogMode = "invoice" | "reminder";
@@ -94,7 +98,24 @@ Regards,
 ${COMPANY_NAME}`;
 }
 
-function defaultReminderEmailBody(customerName: string) {
+function defaultReminderEmailBody(customerName: string, remainingBalance?: number, invoiceTotal?: number) {
+  const isPartial =
+    remainingBalance != null &&
+    invoiceTotal != null &&
+    remainingBalance > 0 &&
+    remainingBalance < invoiceTotal - 0.005;
+
+  if (isPartial) {
+    return `Dear ${customerName},
+
+Just a reminder that a balance remains on this invoice. Let us know if you have any questions.
+
+Thanks for your business!
+
+Sincerely yours,
+Petrosphere Incorporated.`;
+  }
+
   return `Dear ${customerName},
 
 Just a reminder that we have not received a payment for this invoice yet. Let us know if you have any questions.
@@ -111,11 +132,18 @@ function invoiceTotals(payload: SendInvoicePayload) {
     ? (subtotal * (payload.discountPercent ?? 0)) / 100
     : 0;
   const shipping = payload.shippingEnabled ? (payload.shippingAmount ?? 0) : 0;
-  const invoiceTotal = Math.max(0, subtotal - discount + shipping);
-  const balanceDue = Math.max(
+  const invoiceTotal = Math.max(
+    0,
+    payload.invoiceTotalOverride ?? subtotal - discount + shipping,
+  );
+  const calculatedBalance = Math.max(
     0,
     invoiceTotal - (payload.depositEnabled ? (payload.depositAmount ?? 0) : 0),
   );
+  const balanceDue =
+    payload.balanceDueOverride != null
+      ? Math.max(0, payload.balanceDueOverride)
+      : calculatedBalance;
   return { subtotal, discount, shipping, invoiceTotal, balanceDue };
 }
 
@@ -148,7 +176,13 @@ export function SendInvoiceDialog({
     setToEmail(payload.customerEmail?.trim() ?? "");
     if (mode === "reminder") {
       setSubject(`Reminder: Invoice ${payload.number} from ${COMPANY_NAME}`);
-      setEmailBody(defaultReminderEmailBody(payload.customerName));
+      setEmailBody(
+        defaultReminderEmailBody(
+          payload.customerName,
+          payload.balanceDueOverride,
+          payload.invoiceTotalOverride,
+        ),
+      );
     } else {
       setSubject(`Invoice ${payload.number} from ${COMPANY_NAME}`);
       setEmailBody(defaultEmailBody(payload.customerName));
@@ -436,7 +470,11 @@ export function SendInvoiceDialog({
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                     {emailBody ||
                       (mode === "reminder"
-                        ? defaultReminderEmailBody(payload.customerName)
+                        ? defaultReminderEmailBody(
+                            payload.customerName,
+                            payload.balanceDueOverride,
+                            payload.invoiceTotalOverride,
+                          )
                         : defaultEmailBody(payload.customerName))}
                   </p>
                 </div>

@@ -309,6 +309,9 @@ export function Invoices() {
       shippingAmount: prefill.shippingAmount,
       depositEnabled: prefill.depositEnabled,
       depositAmount: prefill.depositAmount,
+      // Remaining balance (partial payments) — not the original invoice total.
+      balanceDueOverride: row.balance,
+      invoiceTotalOverride: row.amount,
     };
   }
 

@@ -504,6 +504,7 @@ export function InvoiceFormDialog({
 
   const sendInvoicePayload = useMemo((): SendInvoicePayload | null => {
     if (!form.customerId && !form.number) return null;
+    const editingBalance = editingInvoice?.balanceDue;
     return {
       invoiceId: editingInvoiceId,
       number: form.number,
@@ -524,12 +525,18 @@ export function InvoiceFormDialog({
       shippingAmount: form.shippingAmount,
       depositEnabled: form.depositEnabled,
       depositAmount: form.depositAmount,
+      balanceDueOverride: editingBalance != null ? editingBalance : balanceDue,
+      invoiceTotalOverride: editingInvoice?.amount ?? invoiceTotal,
     };
   }, [
     editingInvoiceId,
+    editingInvoice?.balanceDue,
+    editingInvoice?.amount,
     form,
     selectedCustomer,
     customerEmail,
+    balanceDue,
+    invoiceTotal,
   ]);
 
   function updateLine(id: string, patch: Partial<InvoiceLineItem>) {
