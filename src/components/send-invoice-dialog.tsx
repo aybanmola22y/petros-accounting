@@ -73,6 +73,10 @@ type SendInvoiceDialogProps = {
   onSent?: () => void;
 };
 
+const BANK_DETAILS_BLOCK = `Bank Details: BPI
+Account Name: Petrosphere Incorporated
+Account No.: 3481-0038-99`;
+
 function defaultEmailBody(customerName: string) {
   return `Dear ${customerName},
 
@@ -82,9 +86,7 @@ We are sending you a copy of the invoice.
 
 Payment can be deposited to the following:
 
-Bank: Bank of the Philippines Islands (BPI)
-Account name: PETROSPHERE INCORPORATED
-Account no. : 3481-0038-99  –  Current Account
+${BANK_DETAILS_BLOCK}
 
 Debit/Credit Card
 Kindly reply to this email should you wish to pay using your debit/credit card.  Be advised that additional fees may be incurred by using this option.
@@ -110,6 +112,10 @@ function defaultReminderEmailBody(customerName: string, remainingBalance?: numbe
 
 Just a reminder that a balance remains on this invoice. Let us know if you have any questions.
 
+Payment can be deposited to the following:
+
+${BANK_DETAILS_BLOCK}
+
 Thanks for your business!
 
 Sincerely yours,
@@ -119,6 +125,10 @@ Petrosphere Incorporated.`;
   return `Dear ${customerName},
 
 Just a reminder that we have not received a payment for this invoice yet. Let us know if you have any questions.
+
+Payment can be deposited to the following:
+
+${BANK_DETAILS_BLOCK}
 
 Thanks for your business!
 
