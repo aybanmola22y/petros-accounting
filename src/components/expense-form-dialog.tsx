@@ -834,8 +834,16 @@ export function ExpenseFormDialog({
       ${form.memo ? `<p><strong>Memo:</strong> ${form.memo}</p>` : ""}
       </body></html>`);
     win.document.close();
-    win.focus();
-    win.print();
+    try {
+      win.focus();
+    } catch {
+      // Best-effort focus before print.
+    }
+    try {
+      win.print();
+    } catch {
+      // Best-effort print.
+    }
   }
 
   function handleAttachments(files: FileList | null) {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState, useSyncExternalStore, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowDown,
   ArrowUp,
@@ -89,6 +89,7 @@ import {
   supplierNamesWithOpenBills,
 } from "@/lib/mock-data/unpaid-bills";
 import { cn } from "@/lib/utils";
+import { GLOBAL_SEARCH_PARAM } from "@/lib/global-search";
 
 const EMPTY_UNPAID_BILLS: UnpaidBill[] = [];
 const EMPTY_PAID_BILLS: PaidBill[] = [];
@@ -129,6 +130,7 @@ function exportSuppliersCsv(rows: Supplier[]) {
 
 export function Suppliers() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { suppliers } = useSuppliers();
   const expenses = useMockExpenses();
@@ -202,6 +204,15 @@ export function Suppliers() {
     return cashOnHand?.id ?? accounts[0]?.id ?? "";
   }, [chartAccounts]);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get(GLOBAL_SEARCH_PARAM);
+    if (q) {
+      setSearch(q);
+      setPage(1);
+    }
+  }, [searchParams]);
+
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey>("name");

@@ -108,9 +108,11 @@ import {
 import { buildReceivePaymentPrefillFromInvoice } from "@/lib/receive-payment-prefill";
 import {
   INVOICES_PATH,
+  INVOICE_ID_SEARCH_PARAM,
   INVOICE_STATUS_SEARCH_PARAM,
   NEW_INVOICE_SEARCH_PARAM,
 } from "@/lib/invoice-navigation";
+import { GLOBAL_SEARCH_PARAM } from "@/lib/global-search";
 import { formatPHP } from "@/views/financial-report-shared";
 
 type Invoice = InvoiceViewRow;
@@ -184,6 +186,7 @@ export function Invoices() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<InvoiceStatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<InvoiceDateFilter>("This year");
+  const [textSearch, setTextSearch] = useState("");
   const [page, setPage] = useState(1);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [invoiceDialogMode, setInvoiceDialogMode] = useState<"create" | "edit">("create");
@@ -231,6 +234,12 @@ export function Invoices() {
       setStatusFilter(normalizeInvoiceStatusFilter(status));
       setPage(1);
     }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const q = searchParams.get(GLOBAL_SEARCH_PARAM);
+    setTextSearch(q ?? "");
+    if (q) setPage(1);
   }, [searchParams]);
 
   useEffect(() => {
@@ -374,6 +383,17 @@ export function Invoices() {
       setInvoiceDialogOpen(true);
     });
   }, [customerOptions, toast]);
+
+  useEffect(() => {
+    const invoiceId = searchParams.get(INVOICE_ID_SEARCH_PARAM);
+    if (!invoiceId) return;
+    const row = allInvoices.find((inv) => inv.id === invoiceId);
+    if (row) openInvoiceEdit(row);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(INVOICE_ID_SEARCH_PARAM);
+    const next = params.toString();
+    router.replace(next ? `${INVOICES_PATH}?${next}` : INVOICES_PATH, { scroll: false });
+  }, [searchParams, allInvoices, router, openInvoiceEdit]);
 
   function duplicateInvoice(row: InvoiceViewRow) {
     const invoice = getInvoiceById(row.id);
@@ -713,11 +733,18 @@ export function Invoices() {
   }
 
   const filtered = useMemo(() => {
+    const q = textSearch.trim().toLowerCase();
     return allInvoices.filter((inv) => {
       if (!invoiceMatchesStatusFilter(inv, statusFilter)) return false;
-      return invoiceMatchesDateFilter(inv.date, dateFilter);
+      if (!invoiceMatchesDateFilter(inv.date, dateFilter)) return false;
+      if (!q) return true;
+      return (
+        inv.number.toLowerCase().includes(q) ||
+        inv.customer.toLowerCase().includes(q) ||
+        inv.id.toLowerCase().includes(q)
+      );
     });
-  }, [allInvoices, statusFilter, dateFilter]);
+  }, [allInvoices, statusFilter, dateFilter, textSearch]);
 
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
   const displayTotal = filtered.length;

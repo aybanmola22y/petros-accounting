@@ -313,6 +313,7 @@ export function InvoiceFormDialog({
   const [previewAttachment, setPreviewAttachment] = useState<InvoiceAttachment | null>(null);
   const [customerSelectOpen, setCustomerSelectOpen] = useState(false);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [ccBccOpen, setCcBccOpen] = useState(false);
   const [ccEmails, setCcEmails] = useState("");
@@ -387,6 +388,17 @@ export function InvoiceFormDialog({
     }
     return Array.from(byId.values());
   }, [receivables.customers, customers, form.customerId, prefill?.customerId]);
+
+  const filteredCustomerList = useMemo(() => {
+    const q = customerSearch.trim().toLowerCase();
+    if (!q) return customerList;
+    // Keep it focused on the field the user types (name). Email is optional to include later.
+    return customerList.filter((c) => c.name.toLowerCase().includes(q));
+  }, [customerList, customerSearch]);
+
+  useEffect(() => {
+    if (!customerSelectOpen) setCustomerSearch("");
+  }, [customerSelectOpen]);
 
   useEffect(() => {
     if (open) {
@@ -698,14 +710,22 @@ export function InvoiceFormDialog({
       ${form.noteToCustomer ? `<p style="margin-top:24px"><strong>Note:</strong> ${form.noteToCustomer}</p>` : ""}
       </body></html>`);
     win.document.close();
-    win.focus();
+    try {
+      win.focus();
+    } catch {
+      // Best-effort focus before print.
+    }
     if (downloadAsPdf) {
       toast({
         title: "Save as PDF",
         description: "In the print dialog, choose Save as PDF as the destination.",
       });
     }
-    win.print();
+    try {
+      win.print();
+    } catch {
+      // Best-effort print.
+    }
   }
 
   function handleMakeRecurring() {
@@ -956,6 +976,18 @@ export function InvoiceFormDialog({
                 </SelectTrigger>
                 {customerSelectOpen ? (
                 <SelectContent className="max-h-[min(360px,var(--radix-select-content-available-height))] p-0">
+                  <div className="px-3 pt-2 pb-1.5">
+                    <Input
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      placeholder="Type customer name..."
+                      className="h-9"
+                      onPointerDown={(e) => {
+                        // Prevent Select from closing when interacting with the search input.
+                        e.stopPropagation();
+                      }}
+                    />
+                  </div>
                   <SelectItem
                     value={ADD_CUSTOMER_VALUE}
                     className="rounded-none border-b border-border/60 bg-muted/40 py-2.5 pl-3 pr-8 text-primary font-medium focus:bg-muted/60 focus:text-primary"
@@ -965,16 +997,20 @@ export function InvoiceFormDialog({
                       Add new
                     </span>
                   </SelectItem>
-                  {customerList.map((c) => (
-                    <SelectItem key={c.id} value={c.id} className="py-2.5 pl-3 pr-8">
-                      <span className="flex w-full min-w-0 items-center justify-between gap-3">
-                        <span className="truncate">
-                          {c.name} - {c.currency ?? "PHP"}
+                  {filteredCustomerList.length === 0 ? (
+                    <div className="px-3 py-3 text-sm text-muted-foreground">No customers match.</div>
+                  ) : (
+                    filteredCustomerList.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="py-2.5 pl-3 pr-8">
+                        <span className="flex w-full min-w-0 items-center justify-between gap-3">
+                          <span className="truncate">
+                            {c.name} - {c.currency ?? "PHP"}
+                          </span>
+                          <span className="shrink-0 text-xs italic text-muted-foreground">Customer</span>
                         </span>
-                        <span className="shrink-0 text-xs italic text-muted-foreground">Customer</span>
-                      </span>
-                    </SelectItem>
-                  ))}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
                 ) : null}
               </Select>

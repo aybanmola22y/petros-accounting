@@ -4,57 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { 
-  LayoutDashboard, 
-  Receipt, 
-  ArrowLeftRight, 
-  FileCheck, 
-  SlidersHorizontal, 
-  ListTree, 
-  CalendarClock, 
-  UserCircle,
-  Users,
-  FileBox,
-  LineChart,
-  ShoppingCart,
-  FileText,
-  ClipboardList,
-  Package,
-  Search,
-  Bell,
   ChevronDown,
-  FileBarChart,
-  FileSpreadsheet,
-  PieChart,
-  TrendingUp,
-  Contact2,
-  LayoutGrid,
-  Settings as SettingsIcon,
-  type LucideIcon,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { hydrateStoreFromPersistence } from "@/lib/mock-data";
 import { SidebarNavUser } from "@/components/sidebar-nav-user";
 import { AppLogo } from "@/components/app-logo";
+import { GlobalSearch } from "@/components/global-search";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-};
-
-type NavGroup = {
-  title: string;
-  items: NavItem[];
-  collapsible?: boolean;
-};
+import { navGroups, type NavItem } from "@/lib/app-navigation";
 
 function isItemActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(href));
@@ -71,72 +36,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     hydrateStoreFromPersistence();
   }, []);
-
-  const navGroups: NavGroup[] = [
-    {
-      title: "Overview",
-      items: [
-        { href: "/", label: "Dashboard", icon: LayoutDashboard }
-      ]
-    },
-    {
-      title: "Accounting",
-      collapsible: true,
-      items: [
-        { href: "/accounting/bank-transactions", label: "Bank Transactions", icon: ArrowLeftRight },
-        { href: "/accounting/integration-transactions", label: "Integrations", icon: FileCheck },
-        { href: "/accounting/reconcile", label: "Reconcile", icon: FileCheck },
-        { href: "/accounting/rules", label: "Rules", icon: SlidersHorizontal },
-        { href: "/accounting/chart-of-accounts", label: "Chart of Accounts", icon: ListTree },
-        { href: "/accounting/recurring-transactions", label: "Recurring Transactions", icon: CalendarClock },
-        { href: "/accounting/my-accountant", label: "My Accountant", icon: UserCircle },
-      ]
-    },
-    {
-      title: "Expenses & Bills",
-      collapsible: true,
-      items: [
-        { href: "/expenses/expense-transactions", label: "Expense Transactions", icon: Receipt },
-        { href: "/expenses/suppliers", label: "Suppliers", icon: Users },
-        { href: "/expenses/bills", label: "Bills", icon: FileBox },
-      ]
-    },
-    {
-      title: "Sales & Get Paid",
-      collapsible: true,
-      items: [
-        { href: "/sales/overview", label: "Overview", icon: LineChart },
-        { href: "/sales/sales-transactions", label: "Sales Transactions", icon: ShoppingCart },
-        { href: "/sales/invoices", label: "Invoices", icon: FileText },
-        { href: "/sales/sales-orders", label: "Sales Orders", icon: ClipboardList },
-        { href: "/sales/products-services", label: "Products & Services", icon: Package },
-      ]
-    },
-    {
-      title: "Customers & Leads",
-      collapsible: true,
-      items: [
-        { href: "/customers/overview", label: "Overview", icon: LayoutGrid },
-        { href: "/customers/list", label: "Customers & Leads", icon: Contact2 },
-      ],
-    },
-    {
-      title: "Reports",
-      collapsible: true,
-      items: [
-        { href: "/reports/standard", label: "Standard Reports", icon: FileBarChart },
-        { href: "/reports/custom", label: "Custom Reports", icon: FileSpreadsheet },
-        { href: "/reports/management", label: "Management Reports", icon: PieChart },
-        { href: "/reports/financial-planning", label: "Financial Planning", icon: TrendingUp },
-      ]
-    },
-    {
-      title: "System",
-      items: [
-        { href: "/settings", label: "Settings", icon: SettingsIcon }
-      ]
-    }
-  ];
 
   const collapsibleTitles = navGroups.filter((g) => g.collapsible).map((g) => g.title);
 
@@ -271,10 +170,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Header */}
         <header className="app-chrome z-20 flex h-14 shrink-0 items-center justify-between border-b bg-card px-6 print:hidden">
           <div className="flex items-center gap-4 flex-1">
-            <div className="relative w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search..." className="pl-9 bg-muted/50 border-none h-9 text-sm" />
-            </div>
+            <GlobalSearch />
           </div>
           <div className="flex items-center gap-4">
             <button className="text-muted-foreground hover:text-foreground">

@@ -223,8 +223,14 @@ function openPrintWindow(title: string, bodyHtml: string): boolean {
 
   // Give the iframe a tick to lay out before invoking print.
   window.setTimeout(() => {
-    frameWindow.focus();
-    frameWindow.print();
+    // `contentWindow` can theoretically become null during navigation/unmount.
+    if (!frameWindow) return;
+    try {
+      frameWindow.focus();
+      frameWindow.print();
+    } catch {
+      // Printing is best-effort; never crash the app.
+    }
   }, 150);
   return true;
 }

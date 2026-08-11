@@ -6,6 +6,9 @@ export const NEW_INVOICE_SEARCH_PARAM = "newInvoice";
 /** Pre-selects a status filter on the invoices page (e.g. Overdue). */
 export const INVOICE_STATUS_SEARCH_PARAM = "status";
 
+/** Opens a specific invoice in the edit dialog on the invoices page. */
+export const INVOICE_ID_SEARCH_PARAM = "invoiceId";
+
 export function invoicesHref(openNewInvoiceDialog = false, statusFilter?: string): string {
   const params = new URLSearchParams();
   if (openNewInvoiceDialog) params.set(NEW_INVOICE_SEARCH_PARAM, "1");

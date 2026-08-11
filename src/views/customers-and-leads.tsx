@@ -45,6 +45,7 @@ import {
   CUSTOMERS_LIST_PATH,
   NEW_CUSTOMER_SEARCH_PARAM,
 } from "@/lib/customer-navigation";
+import { GLOBAL_SEARCH_PARAM } from "@/lib/global-search";
 import { invoicesHref } from "@/lib/invoice-navigation";
 import { createCustomerViaApi } from "@/lib/customers/api";
 import type { CustomerWithBalance, MockLead } from "@/lib/mock-data";
@@ -81,6 +82,14 @@ export function CustomersAndLeads() {
       router.replace(CUSTOMERS_LIST_PATH, { scroll: false });
     }
   }, [searchParams, router]);
+
+  useEffect(() => {
+    const q = searchParams.get(GLOBAL_SEARCH_PARAM);
+    if (q) {
+      setSearch(q);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
