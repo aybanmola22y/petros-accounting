@@ -250,7 +250,7 @@ function companyHeaderHtml(): string {
     </div>`;
 }
 
-export function openInvoicePrintPreview(values: PrintInvoiceInput): boolean {
+function buildInvoiceBodyHtml(values: PrintInvoiceInput): string {
   const { subtotal, discount, shipping, invoiceTotal, balanceDue, amountPaid } =
     invoiceTotals(values);
 
@@ -272,7 +272,7 @@ export function openInvoicePrintPreview(values: PrintInvoiceInput): boolean {
     })
     .join("");
 
-  const body = `
+  return `
     <div class="sheet">
       <div class="topbar"></div>
       <div class="topbar-gold"></div>
@@ -328,8 +328,46 @@ export function openInvoicePrintPreview(values: PrintInvoiceInput): boolean {
         <div class="thanks">Thank you for doing business with ${escapeHtml(COMPANY.name)}!</div>
       </div>
     </div>`;
+}
 
-  return openPrintWindow(`Invoice ${values.number}`, body);
+function buildInvoiceDocumentHtml(values: PrintInvoiceInput): string {
+  const title = `Invoice ${values.number}`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+    <style>${PRINT_STYLES}</style></head><body>
+    ${buildInvoiceBodyHtml(values)}
+    </body></html>`;
+}
+
+function safeInvoiceFileName(number: string): string {
+  const cleaned = number.replace(/[^\w.-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return cleaned || "invoice";
+}
+
+/** Opens the system print dialog (does not download a file). */
+export function openInvoicePrintPreview(values: PrintInvoiceInput): boolean {
+  return openPrintWindow(`Invoice ${values.number}`, buildInvoiceBodyHtml(values));
+}
+
+/** Downloads the invoice as a standalone HTML file (no print dialog). */
+export function downloadInvoiceDocument(values: PrintInvoiceInput): boolean {
+  if (typeof document === "undefined") return false;
+
+  try {
+    const html = buildInvoiceDocumentHtml(values);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Invoice-${safeInvoiceFileName(values.number)}.html`;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 2_000);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function openPackingSlipPrint(values: PrintInvoiceInput): boolean {

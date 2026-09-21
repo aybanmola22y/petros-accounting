@@ -450,8 +450,8 @@ export function Invoices() {
       : openInvoicePrintPreview(printInput);
     if (!ok) {
       toast({
-        title: "Pop-up blocked",
-        description: "Allow pop-ups to print this invoice.",
+        title: "Could not open print preview",
+        description: "Try again, or use your browser’s print dialog (Ctrl+P).",
         variant: "destructive",
       });
     }

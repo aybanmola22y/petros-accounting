@@ -69,6 +69,7 @@ import {
 } from "@/lib/mock-data/recurring-transactions";
 import { createRecurringTemplateViaApi } from "@/lib/recurring-templates/api";
 import { invoiceStatusHeadline, resolveInvoiceStatusTimeline } from "@/lib/invoice-status";
+import { downloadInvoiceDocument, openInvoicePrintPreview } from "@/lib/invoice-print";
 import type { InvoiceAttachment } from "@/lib/mock-data/types";
 import { formatPHP } from "@/views/financial-report-shared";
 import { cn } from "@/lib/utils";
@@ -673,59 +674,56 @@ export function InvoiceFormDialog({
     }
   }
 
-  function openPrintPreview(downloadAsPdf = false) {
+  function buildPrintInput() {
+    return {
+      number: form.number,
+      customerName: selectedCustomer?.name ?? "Customer",
+      invoiceDate: form.invoiceDate,
+      dueDate: form.dueDate,
+      terms: form.terms,
+      noteToCustomer: form.noteToCustomer,
+      lines: form.lines,
+      discountEnabled: form.discountEnabled,
+      discountPercent: form.discountPercent,
+      shippingEnabled: form.shippingEnabled,
+      shippingAmount: form.shippingAmount,
+      depositEnabled: form.depositEnabled,
+      depositAmount: form.depositAmount,
+      balanceDueOverride: balanceDue,
+    };
+  }
+
+  function handlePrintInvoice() {
     if (!readOnly && !validateForm()) return;
     maybeRecordCustomerView();
-    const customerName = selectedCustomer?.name ?? "Customer";
-    const linesHtml = form.lines
-      .filter((l) => l.productService || l.qty * l.rate > 0)
-      .map(
-        (l) =>
-          `<tr><td>${l.productService || "—"}</td><td style="text-align:right">${l.qty}</td><td style="text-align:right">${formatPHP(l.rate)}</td><td style="text-align:right">${formatPHP(l.qty * l.rate)}</td></tr>`,
-      )
-      .join("");
-    const win = window.open("", "_blank", "noopener,noreferrer,width=720,height=900");
-    if (!win) {
+
+    const ok = openInvoicePrintPreview(buildPrintInput());
+    if (!ok) {
       toast({
-        title: "Pop-up blocked",
-        description: "Allow pop-ups to print or download this invoice.",
+        title: "Could not open print preview",
+        description: "Try again, or use your browser’s print dialog (Ctrl+P).",
+        variant: "destructive",
+      });
+    }
+  }
+
+  function handleDownloadInvoice() {
+    if (!readOnly && !validateForm()) return;
+    maybeRecordCustomerView();
+
+    const ok = downloadInvoiceDocument(buildPrintInput());
+    if (!ok) {
+      toast({
+        title: "Could not download invoice",
+        description: "Try again in a moment.",
         variant: "destructive",
       });
       return;
     }
-    win.document.write(`<!DOCTYPE html><html><head><title>Invoice ${form.number}</title>
-      <style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;margin-top:16px}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left}th{font-size:12px;color:#555}.totals{margin-top:16px;max-width:280px;margin-left:auto}.totals div{display:flex;justify-content:space-between;padding:4px 0}.bold{font-weight:600;border-top:1px solid #111;padding-top:8px}</style></head><body>
-      <h1>Invoice ${form.number}</h1>
-      <p><strong>Customer:</strong> ${customerName}</p>
-      <p><strong>Date:</strong> ${form.invoiceDate} &nbsp; <strong>Due:</strong> ${form.dueDate}</p>
-      <p><strong>Terms:</strong> ${form.terms}</p>
-      <table><thead><tr><th>Product/service</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>${linesHtml}</tbody></table>
-      <div class="totals">
-        <div><span>Subtotal</span><span>${formatPHP(subtotal)}</span></div>
-        ${form.discountEnabled ? `<div><span>Discount (${form.discountPercent}%)</span><span>${formatPHP(discountAmount)}</span></div>` : ""}
-        ${form.shippingEnabled ? `<div><span>Shipping</span><span>${formatPHP(shippingAmount)}</span></div>` : ""}
-        <div class="bold"><span>Total</span><span>${formatPHP(invoiceTotal)}</span></div>
-        <div><span>Balance due</span><span>${formatPHP(balanceDue)}</span></div>
-      </div>
-      ${form.noteToCustomer ? `<p style="margin-top:24px"><strong>Note:</strong> ${form.noteToCustomer}</p>` : ""}
-      </body></html>`);
-    win.document.close();
-    try {
-      win.focus();
-    } catch {
-      // Best-effort focus before print.
-    }
-    if (downloadAsPdf) {
-      toast({
-        title: "Save as PDF",
-        description: "In the print dialog, choose Save as PDF as the destination.",
-      });
-    }
-    try {
-      win.print();
-    } catch {
-      // Best-effort print.
-    }
+    toast({
+      title: "Invoice downloaded",
+      description: `Invoice ${form.number} was saved to your downloads.`,
+    });
   }
 
   function handleMakeRecurring() {
@@ -1524,7 +1522,7 @@ export function InvoiceFormDialog({
 
         {readOnly ? (
           <div className="shrink-0 border-t bg-background px-6 py-3 flex items-center justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => openPrintPreview(false)}>
+            <Button type="button" variant="outline" onClick={handlePrintInvoice}>
               Print
             </Button>
             <Button type="button" onClick={() => onOpenChange(false)}>
@@ -1539,10 +1537,10 @@ export function InvoiceFormDialog({
               variant="outline"
               menuAlign="center"
               label="Print or download"
-              onClick={() => openPrintPreview(false)}
+              onClick={handlePrintInvoice}
               menuItems={[
-                { label: "Print invoice", onClick: () => openPrintPreview(false) },
-                { label: "Download PDF", onClick: () => openPrintPreview(true) },
+                { label: "Print invoice", onClick: handlePrintInvoice },
+                { label: "Download invoice", onClick: handleDownloadInvoice },
               ]}
             />
             <SplitActionButton
@@ -1577,10 +1575,7 @@ export function InvoiceFormDialog({
                 { label: "Review and send", onClick: openReviewSend },
                 {
                   label: "Preview only",
-                  onClick: () => {
-                    if (!validateForm()) return;
-                    openPrintPreview(false);
-                  },
+                  onClick: handlePrintInvoice,
                 },
                 { kind: "separator" },
                 {
