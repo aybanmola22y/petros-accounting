@@ -62,6 +62,8 @@ async function patchInvoiceTimeline(
     await updateInvoiceViaApi(invoiceId, {
       statusTimeline,
       statusSub: statusSubFromTimeline(statusTimeline),
+      // Keep attachments on every timeline patch so View/Edit never loses them.
+      ...(invoice.attachments?.length ? { attachments: invoice.attachments } : {}),
     });
     return true;
   } catch (error) {
@@ -255,6 +257,7 @@ export async function recordReceivePaymentAgainstInvoice(input: {
   await updateInvoiceViaApi(input.invoiceId, {
     balanceDue: newBalance,
     kind: newBalance <= 0 ? "paid" : newBalance < invoice.amount ? "partial" : invoice.kind,
+    ...(invoice.attachments?.length ? { attachments: invoice.attachments } : {}),
     ...(paidAt
       ? {
           statusTimeline: {

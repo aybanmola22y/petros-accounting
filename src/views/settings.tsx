@@ -6,6 +6,7 @@ import {
   Building2,
   CheckCircle2,
   Coins,
+  Database,
   Loader2,
   Plug,
   Save,
@@ -15,6 +16,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { BackupRestorePanel } from "@/components/backup-restore-panel";
 import { CreateUserDialog } from "@/components/create-user-dialog";
 import {
   AlertDialog,
@@ -286,6 +288,7 @@ export function Settings() {
               { value: "notifications", label: "Notifications", icon: Bell },
               { value: "integrations", label: "Integrations", icon: Plug },
               { value: "import", label: "Import", icon: Upload },
+              { value: "data", label: "Backup", icon: Database },
               { value: "security", label: "Security", icon: ShieldCheck },
             ] as const
           ).map((tab) => (
@@ -675,6 +678,15 @@ export function Settings() {
 
         <TabsContent value="import" className="mt-0">
           <QuickBooksImport />
+        </TabsContent>
+
+        <TabsContent value="data" className="mt-0">
+          <SettingsPanel
+            title="Backup & restore"
+            description="Download or restore a single JSON file with your core accounting data."
+          >
+            <BackupRestorePanel />
+          </SettingsPanel>
         </TabsContent>
 
         <TabsContent value="security" className="mt-0 space-y-5">

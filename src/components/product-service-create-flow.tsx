@@ -5,8 +5,8 @@ import { ChevronDown, Package, Paintbrush, Shirt, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import {
-  addProductService,
   getProductServicesSnapshot,
+  replaceProductServicesInStore,
   type CreateProductServiceInput,
   type MockProductService,
   type ProductServiceItemType,
@@ -250,24 +250,57 @@ export function ProductServiceCreateFlow({
     return null;
   }
 
-  function save() {
+  async function save() {
     const input = buildInput();
     if (!input) return;
-    const created = addProductService(input);
-    if (!created) {
+
+    try {
+      const response = await fetch("/api/product-services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+      });
+      const payload = (await response.json()) as {
+        productService?: MockProductService;
+        productServices?: MockProductService[];
+        error?: string;
+      };
+
+      if (!response.ok) {
+        const message = payload.error ?? "Could not save product or service.";
+        if (/already exists|duplicate|unique/i.test(message)) {
+          toast({
+            title: "Already exists",
+            description: `"${input.name}" is already in the list.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(message);
+      }
+
+      if (payload.productServices) {
+        replaceProductServicesInStore(payload.productServices);
+      }
+
+      const created = payload.productService;
+      if (!created) {
+        throw new Error("Product was saved but could not be loaded.");
+      }
+
+      onCreated(created);
+      handleOpenChange(false);
       toast({
-        title: "Already exists",
-        description: `"${input.name}" is already in the list.`,
+        title: "Product/service added",
+        description: `${created.name} is ready to use.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Could not save",
+        description: error instanceof Error ? error.message : "Try again.",
         variant: "destructive",
       });
-      return;
     }
-    onCreated(created);
-    handleOpenChange(false);
-    toast({
-      title: "Product/service added",
-      description: `${created.name} is ready to use.`,
-    });
   }
 
   const typeSheet = (

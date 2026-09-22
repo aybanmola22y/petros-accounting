@@ -21,8 +21,11 @@ type FormDatePickerProps = {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  inputClassName?: string;
   disabled?: boolean;
   id?: string;
+  /** Smaller control for dense tables (e.g. invoice line service date). */
+  compact?: boolean;
 };
 
 function parseFormDate(value: string): Date | null {
@@ -37,8 +40,10 @@ export function FormDatePicker({
   value,
   onChange,
   className,
+  inputClassName,
   disabled,
   id,
+  compact = false,
 }: FormDatePickerProps) {
   const selected = parseFormDate(value) ?? startOfDay(new Date());
   const [open, setOpen] = useState(false);
@@ -60,10 +65,14 @@ export function FormDatePicker({
   };
 
   return (
-    <div className={cn("relative flex h-10 items-center", className)}>
+    <div className={cn("relative flex items-center", compact ? "h-9" : "h-10", className)}>
       <Input
         id={id}
-        className="h-10 pr-10 tabular-nums"
+        className={cn(
+          "tabular-nums",
+          compact ? "h-9 pr-8 text-sm" : "h-10 pr-10",
+          inputClassName,
+        )}
         value={text}
         disabled={disabled}
         placeholder="M/D/YYYY"
@@ -91,10 +100,13 @@ export function FormDatePicker({
             variant="ghost"
             size="icon"
             disabled={disabled}
-            className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className={cn(
+              "absolute right-0.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground",
+              compact ? "h-7 w-7" : "h-8 w-8",
+            )}
             aria-label="Select date"
           >
-            <CalendarIcon className="h-4 w-4" />
+            <CalendarIcon className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end" sideOffset={6}>

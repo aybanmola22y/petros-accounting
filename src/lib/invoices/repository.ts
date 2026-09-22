@@ -49,11 +49,26 @@ export async function createInvoiceInDb(
   input: Omit<MockInvoice, "id"> & { sortOrder?: number },
 ): Promise<MockInvoice> {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
+  const insertPayload = mockInvoiceToInsert(input);
+
+  let { data, error } = await supabase
     .from(TABLE)
-    .insert(mockInvoiceToInsert(input))
+    .insert(insertPayload)
     .select("*")
     .single();
+
+  // Older DBs may not have the attachments column yet — retry without it
+  // (attachments still live in status_timeline.__attachments).
+  if (error && insertPayload.attachments != null && /attachments|schema cache|column/i.test(error.message)) {
+    const { attachments: _drop, ...withoutAttachmentsColumn } = insertPayload;
+    const retry = await supabase
+      .from(TABLE)
+      .insert(withoutAttachmentsColumn)
+      .select("*")
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw new Error(error.message);
   return invoiceRowToMock(data as InvoiceRow);
@@ -114,41 +129,67 @@ export async function updateInvoiceInDb(
   patch: Partial<MockInvoice>,
 ): Promise<MockInvoice | null> {
   const update = mockInvoicePatchToUpdate(patch);
+  const existing = await getInvoiceByIdFromDb(id);
 
   // Keep persisted attachments / customer name when timeline (or other fields) are patched alone.
-  if (
+  const shouldMergeExtras =
     patch.attachments !== undefined ||
     patch.customerName !== undefined ||
     patch.customerId !== undefined ||
-    update.status_timeline !== undefined
-  ) {
-    const existing = await getInvoiceByIdFromDb(id);
+    update.status_timeline !== undefined ||
+    patch.statusTimeline !== undefined;
+
+  if (shouldMergeExtras) {
     const customerName =
       patch.customerName !== undefined
         ? patch.customerName
         : patch.customerId?.startsWith("import:")
           ? patch.customerId.slice("import:".length)
           : existing?.customerName;
+    const resolvedAttachments =
+      patch.attachments !== undefined ? patch.attachments : existing?.attachments;
+
     update.status_timeline = mergeAttachmentsIntoTimeline(
       patch.statusTimeline ??
         (update.status_timeline as MockInvoice["statusTimeline"]) ??
         existing?.statusTimeline,
+      // Prefer explicit patch; otherwise re-embed whatever we already loaded from DB.
       patch.attachments !== undefined ? patch.attachments : existing?.attachments,
       customerName,
     );
+
+    // Also keep the dedicated attachments column in sync when present.
+    if (resolvedAttachments !== undefined) {
+      update.attachments = resolvedAttachments.length ? resolvedAttachments : null;
+    } else if (existing?.attachments?.length) {
+      update.attachments = existing.attachments;
+    }
   }
 
   if (Object.keys(update).length === 0) {
-    return getInvoiceByIdFromDb(id);
+    return existing;
   }
 
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from(TABLE)
     .update(update)
     .eq("id", id)
     .select("*")
     .maybeSingle();
+
+  // Older DBs may not have the attachments column yet — retry without it.
+  if (error && update.attachments !== undefined && /attachments|schema cache|column/i.test(error.message)) {
+    const { attachments: _drop, ...withoutAttachmentsColumn } = update;
+    const retry = await supabase
+      .from(TABLE)
+      .update(withoutAttachmentsColumn)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw new Error(error.message);
   if (data) return invoiceRowToMock(data as InvoiceRow);

@@ -89,7 +89,7 @@ import { useInvoicesPageBootstrap } from "@/hooks/use-invoices-page-bootstrap";
 import { useMockReceivables } from "@/hooks/use-mock-receivables";
 import { prefetchSalesTransactionLines } from "@/hooks/use-mock-sales";
 import { useToast } from "@/hooks/use-toast";
-import { deleteInvoiceViaApi, voidInvoiceViaApi } from "@/lib/invoices/api";
+import { deleteInvoiceViaApi, fetchInvoicesFromApi, voidInvoiceViaApi } from "@/lib/invoices/api";
 import {
   buildInvoicePrefillFromInvoice,
 } from "@/lib/invoice-form-prefill";
@@ -355,7 +355,7 @@ export function Invoices() {
   }
 
   const openInvoiceEdit = useCallback((row: InvoiceViewRow) => {
-    const invoice = getInvoiceById(row.id);
+    let invoice = getInvoiceById(row.id);
     if (!invoice) {
       toast({
         title: "Invoice not found",
@@ -372,16 +372,29 @@ export function Invoices() {
       });
       return;
     }
-    void recordInvoiceOpened(row.id);
-    void prefetchSalesTransactionLines();
-    const prefill = buildInvoicePrefillFromInvoice(invoice, customerOptions, row);
-    startTransition(() => {
-      setInvoiceDialogMode("edit");
-      setEditingInvoiceId(row.id);
-      setInvoicePrefill(prefill);
-      setDraftInvoiceNumber(row.number);
-      setInvoiceDialogOpen(true);
-    });
+
+    // If the merged list row lost attachments, try a fresh reload from Supabase.
+    void (async () => {
+      if (!invoice.attachments?.length) {
+        try {
+          await fetchInvoicesFromApi();
+          invoice = getInvoiceById(row.id) ?? invoice;
+        } catch {
+          // Keep the in-memory invoice if refresh fails.
+        }
+      }
+
+      void recordInvoiceOpened(row.id);
+      void prefetchSalesTransactionLines();
+      const prefill = buildInvoicePrefillFromInvoice(invoice, customerOptions, row);
+      startTransition(() => {
+        setInvoiceDialogMode("edit");
+        setEditingInvoiceId(row.id);
+        setInvoicePrefill(prefill);
+        setDraftInvoiceNumber(row.number);
+        setInvoiceDialogOpen(true);
+      });
+    })();
   }, [customerOptions, toast]);
 
   useEffect(() => {

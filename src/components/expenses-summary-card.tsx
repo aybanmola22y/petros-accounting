@@ -182,8 +182,11 @@ export function ExpensesSummaryCard({
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                No expense data
+              <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-sm text-muted-foreground">
+                <p>No spending in this period</p>
+                <p className="text-xs">
+                  Try another period, or import expense transactions.
+                </p>
               </div>
             )}
           </div>

@@ -104,11 +104,24 @@ function embedInvoiceExtrasInTimeline(
   attachments: InvoiceAttachment[] | null | undefined,
   customerName: string | null | undefined,
 ): TimelineExtras | null {
-  const base = stripTimelineExtras(timeline as TimelineExtras | undefined) ?? {};
+  const raw = timeline as TimelineExtras | null | undefined;
+  const priorAttachments = Array.isArray(raw?.__attachments) ? raw.__attachments : undefined;
+  const base = stripTimelineExtras(raw) ?? {};
   const next: TimelineExtras = { ...base };
-  if (attachments && attachments.length > 0) next.__attachments = attachments;
+
+  if (attachments === undefined) {
+    if (priorAttachments && priorAttachments.length > 0) {
+      next.__attachments = priorAttachments;
+    }
+  } else if (attachments && attachments.length > 0) {
+    next.__attachments = attachments;
+  }
+  // attachments === [] or null → clear (omit __attachments)
+
   const name = customerName?.trim();
   if (name) next.__customerName = name;
+  else if (raw?.__customerName?.trim()) next.__customerName = raw.__customerName.trim();
+
   return Object.keys(next).length > 0 ? next : null;
 }
 
@@ -149,6 +162,7 @@ export function invoiceRowToMock(row: InvoiceRow): MockInvoice {
 }
 
 export function mockInvoiceToInsert(invoice: Omit<MockInvoice, "id"> & { sortOrder?: number }): InvoiceInsert {
+  const attachments = invoice.attachments?.length ? invoice.attachments : null;
   return {
     invoice_number: invoice.number.trim(),
     invoice_date: parseMockDateToIso(invoice.date),
@@ -160,11 +174,13 @@ export function mockInvoiceToInsert(invoice: Omit<MockInvoice, "id"> & { sortOrd
     status_sub: invoice.statusSub ?? null,
     status_timeline: embedInvoiceExtrasInTimeline(
       invoice.statusTimeline,
-      invoice.attachments,
+      attachments,
       resolveCustomerNameForStorage(invoice),
     ),
     voided: invoice.voided ?? false,
     lines: invoice.lines?.length ? invoice.lines : null,
+    // Dedicated column (migration) + timeline fallback for older DBs.
+    attachments,
     sort_order: invoice.sortOrder,
   };
 }
@@ -179,6 +195,9 @@ export function mockInvoicePatchToUpdate(patch: Partial<MockInvoice>): InvoiceUp
   if (patch.kind !== undefined) update.kind = patch.kind;
   if (patch.overdueDays !== undefined) update.overdue_days = patch.overdueDays ?? null;
   if (patch.statusSub !== undefined) update.status_sub = patch.statusSub ?? null;
+  if (patch.attachments !== undefined) {
+    update.attachments = patch.attachments.length ? patch.attachments : null;
+  }
   if (
     patch.statusTimeline !== undefined &&
     patch.attachments === undefined &&

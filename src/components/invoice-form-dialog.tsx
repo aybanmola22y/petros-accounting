@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { FormDatePicker } from "@/components/form-date-picker";
 import { ProductClassSelect } from "@/components/product-class-select";
+import { ProductServiceCreateFlow } from "@/components/product-service-create-flow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SplitActionButton } from "@/components/split-action-button";
@@ -44,6 +45,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -59,8 +65,10 @@ import { SendInvoiceDialog, type SendInvoicePayload } from "@/components/send-in
 import { useToast } from "@/hooks/use-toast";
 import {
   getInvoiceById,
+  getProductServicesSnapshot,
   getReceivablesSnapshot,
   recordInvoiceViewed,
+  replaceProductServicesInStore,
   subscribeMockStore,
 } from "@/lib/mock-data";
 import {
@@ -70,6 +78,7 @@ import {
 import { createRecurringTemplateViaApi } from "@/lib/recurring-templates/api";
 import { invoiceStatusHeadline, resolveInvoiceStatusTimeline } from "@/lib/invoice-status";
 import { downloadInvoiceDocument, openInvoicePrintPreview } from "@/lib/invoice-print";
+import { INVOICE_PRODUCT_SUGGESTIONS } from "@/lib/invoice-product-suggestions";
 import type { InvoiceAttachment } from "@/lib/mock-data/types";
 import { formatPHP } from "@/views/financial-report-shared";
 import { cn } from "@/lib/utils";
@@ -110,6 +119,141 @@ type CustomerOption = { id: string; name: string; email?: string; currency?: str
 
 const ADD_CUSTOMER_VALUE = "__add_customer__";
 
+type InvoiceProductOption = {
+  name: string;
+  sku?: string;
+  description?: string;
+  rate?: number;
+  secondary?: string;
+};
+
+function InvoiceProductServicePicker({
+  value,
+  options,
+  disabled,
+  open,
+  onOpenChange,
+  onSelect,
+  onAddNew,
+}: {
+  value: string;
+  options: InvoiceProductOption[];
+  disabled?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (option: InvoiceProductOption) => void;
+  onAddNew: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.secondary?.toLowerCase().includes(q) ?? false),
+    );
+  }, [options, search]);
+
+  useEffect(() => {
+    if (!open) setSearch("");
+  }, [open]);
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          className={cn(
+            LINE_TABLE_SELECT,
+            "flex w-full items-center justify-between gap-1 rounded-md text-left outline-none",
+            "focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          )}
+        >
+          <span
+            className={cn(
+              "min-w-0 flex-1 truncate",
+              !value && "text-muted-foreground",
+            )}
+          >
+            {value || "Select product/service"}
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="z-[80] w-[min(420px,calc(100vw-2rem))] p-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="border-b p-2">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search product/service..."
+            className="h-9"
+          />
+        </div>
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 border-b bg-muted/40 px-3 py-2.5 text-left text-sm font-medium text-primary hover:bg-muted/60"
+          onClick={() => {
+            onOpenChange(false);
+            onAddNew();
+          }}
+        >
+          <Plus className="h-4 w-4 shrink-0" />
+          Add new
+        </button>
+        <div className="max-h-72 overflow-y-auto py-1">
+          {value && !options.some((p) => p.name === value) ? (
+            <button
+              type="button"
+              className="flex w-full px-3 py-2 text-left text-sm hover:bg-accent"
+              onClick={() => {
+                onSelect({ name: value });
+                onOpenChange(false);
+              }}
+            >
+              {value}
+            </button>
+          ) : null}
+          {filtered.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              No matching products
+            </p>
+          ) : (
+            filtered.map((p) => (
+              <button
+                key={p.name}
+                type="button"
+                className={cn(
+                  "flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-accent",
+                  value === p.name && "bg-accent/60",
+                )}
+                onClick={() => {
+                  onSelect(p);
+                  onOpenChange(false);
+                }}
+              >
+                <span className="min-w-0 truncate">{p.name}</span>
+                {p.secondary ? (
+                  <span className="shrink-0 text-xs italic text-muted-foreground">
+                    {p.secondary.length > 40
+                      ? `${p.secondary.slice(0, 40)}…`
+                      : p.secondary}
+                  </span>
+                ) : null}
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const RECURRING_FREQUENCIES = ["Weekly", "Monthly", "Quarterly", "Yearly"] as const;
 
 const TERMS = ["Due on receipt", "Net 15", "Net 30", "Net 60"];
@@ -119,13 +263,6 @@ const LOCATIONS = [
   "Cebu Branch",
 ];
 const TAX_SETTINGS = ["Out of Scope of Tax", "Tax exclusive", "Tax inclusive"];
-const PRODUCT_SUGGESTIONS = [
-  "Consulting services",
-  "Freight delivery",
-  "Office supplies",
-  "Monthly retainer",
-  "Installation labor",
-];
 
 /** Match table header padding (px-2) so column labels align with field text. */
 const LINE_TABLE_CELL = "px-2 py-1.5 align-middle";
@@ -319,7 +456,33 @@ export function InvoiceFormDialog({
   const [ccBccOpen, setCcBccOpen] = useState(false);
   const [ccEmails, setCcEmails] = useState("");
   const [bccEmails, setBccEmails] = useState("");
+  const [productServiceSelectLineId, setProductServiceSelectLineId] = useState<string | null>(null);
+  const [addProductForLineId, setAddProductForLineId] = useState<string | null>(null);
+  const [newProductServiceOpen, setNewProductServiceOpen] = useState(false);
+  const productServiceSelectLineIdRef = useRef<string | null>(null);
+  productServiceSelectLineIdRef.current = productServiceSelectLineId;
   const receivables = useSyncExternalStore(subscribeMockStore, getReceivablesSnapshot, getReceivablesSnapshot);
+  const productServices = useSyncExternalStore(
+    subscribeMockStore,
+    getProductServicesSnapshot,
+    getProductServicesSnapshot,
+  );
+  const productOptions = useMemo(() => {
+    const byName = new Map<string, InvoiceProductOption>();
+    for (const name of INVOICE_PRODUCT_SUGGESTIONS) {
+      byName.set(name, { name });
+    }
+    for (const product of productServices) {
+      byName.set(product.name, {
+        name: product.name,
+        sku: product.sku,
+        description: product.salesDescription,
+        rate: product.salesPrice,
+        secondary: product.category || product.salesDescription,
+      });
+    }
+    return Array.from(byName.values());
+  }, [productServices]);
   const editingInvoice = useMemo(() => {
     if (!editingInvoiceId) return null;
     return receivables.invoices.find((inv) => inv.id === editingInvoiceId) ?? getInvoiceById(editingInvoiceId) ?? null;
@@ -557,6 +720,54 @@ export function InvoiceFormDialog({
       ...prev,
       lines: prev.lines.map((l) => (l.id === id ? { ...l, ...patch } : l)),
     }));
+  }
+
+  function handleNewProductServiceOpenChange(openState: boolean) {
+    setNewProductServiceOpen(openState);
+    if (!openState) setAddProductForLineId(null);
+  }
+
+  function handleProductServiceCreated(created: {
+    name: string;
+    sku?: string;
+    salesDescription?: string;
+    salesPrice?: number;
+  }) {
+    if (!addProductForLineId) return;
+    updateLine(addProductForLineId, {
+      productService: created.name,
+      sku: created.sku ?? "",
+      description: created.salesDescription ?? "",
+      rate: created.salesPrice ?? 0,
+    });
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/product-services");
+        const payload = (await response.json()) as {
+          productServices?: typeof productServices;
+          error?: string;
+        };
+        if (!response.ok || cancelled) return;
+        // Avoid remounting an open product picker while the list refreshes.
+        if (productServiceSelectLineIdRef.current) return;
+        replaceProductServicesInStore(payload.productServices ?? []);
+      } catch {
+        // Keep local snapshot if API is unavailable.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  function openAddProductService(lineId: string) {
+    setAddProductForLineId(lineId);
+    window.setTimeout(() => setNewProductServiceOpen(true), 50);
   }
 
   function addLine() {
@@ -802,32 +1013,39 @@ export function InvoiceFormDialog({
       return;
     }
 
-    list.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const attachment: InvoiceAttachment = {
-          id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-          name: file.name,
-          size: file.size,
-          mimeType: file.type || "application/octet-stream",
-          dataUrl: reader.result as string,
-          addedAt: new Date().toISOString(),
-        };
-        setAttachments((prev) => [...prev, attachment]);
-      };
-      reader.onerror = () => {
-        toast({
-          title: "Upload failed",
-          description: `Could not read ${file.name}.`,
-          variant: "destructive",
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-
-    toast({
-      title: "Attachments added",
-      description: `${list.length} file${list.length === 1 ? "" : "s"} attached.`,
+    void Promise.all(
+      list.map(
+        (file) =>
+          new Promise<void>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const attachment: InvoiceAttachment = {
+                id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                name: file.name,
+                size: file.size,
+                mimeType: file.type || "application/octet-stream",
+                dataUrl: reader.result as string,
+                addedAt: new Date().toISOString(),
+              };
+              setAttachments((prev) => [...prev, attachment]);
+              resolve();
+            };
+            reader.onerror = () => {
+              toast({
+                title: "Upload failed",
+                description: `Could not read ${file.name}.`,
+                variant: "destructive",
+              });
+              resolve();
+            };
+            reader.readAsDataURL(file);
+          }),
+      ),
+    ).then(() => {
+      toast({
+        title: "Attachments added",
+        description: `${list.length} file${list.length === 1 ? "" : "s"} attached.`,
+      });
     });
   }
 
@@ -1177,20 +1395,35 @@ export function InvoiceFormDialog({
                         </td>
                         <td className="px-2 py-1.5 tabular-nums text-muted-foreground">{index + 1}</td>
                         <td className={LINE_TABLE_CELL}>
-                          <Input
-                            className={cn(LINE_TABLE_DATE_FIELD, "w-full min-w-0")}
-                            placeholder="MM/DD/YYYY"
+                          <FormDatePicker
+                            compact
+                            className="w-full min-w-[7.25rem]"
+                            inputClassName={cn(
+                              LINE_TABLE_DATE_FIELD,
+                              "w-full min-w-0 pr-8",
+                            )}
                             value={line.serviceDate}
-                            onChange={(e) => updateLine(line.id, { serviceDate: e.target.value })}
+                            onChange={(serviceDate) => updateLine(line.id, { serviceDate })}
                           />
                         </td>
                         <td className={LINE_TABLE_CELL}>
-                          <Input
-                            className={LINE_TABLE_FIELD}
-                            list="invoice-products"
-                            placeholder="Select product/service"
+                          <InvoiceProductServicePicker
                             value={line.productService}
-                            onChange={(e) => updateLine(line.id, { productService: e.target.value })}
+                            options={productOptions}
+                            disabled={readOnly}
+                            open={productServiceSelectLineId === line.id}
+                            onOpenChange={(nextOpen) =>
+                              setProductServiceSelectLineId(nextOpen ? line.id : null)
+                            }
+                            onSelect={(product) =>
+                              updateLine(line.id, {
+                                productService: product.name,
+                                sku: product.sku ?? line.sku,
+                                description: product.description ?? line.description,
+                                rate: product.rate ?? line.rate,
+                              })
+                            }
+                            onAddNew={() => openAddProductService(line.id)}
                           />
                         </td>
                         <td className={LINE_TABLE_CELL}>
@@ -1261,11 +1494,6 @@ export function InvoiceFormDialog({
                     ))}
                   </tbody>
                 </table>
-                <datalist id="invoice-products">
-                  {PRODUCT_SUGGESTIONS.map((p) => (
-                    <option key={p} value={p} />
-                  ))}
-                </datalist>
               </div>
             </div>
 
@@ -1612,6 +1840,12 @@ export function InvoiceFormDialog({
       open={newCustomerOpen}
       onOpenChange={setNewCustomerOpen}
       onSave={handleCreateCustomer}
+    />
+
+    <ProductServiceCreateFlow
+      open={newProductServiceOpen}
+      onOpenChange={handleNewProductServiceOpenChange}
+      onCreated={handleProductServiceCreated}
     />
 
     <Dialog open={recurringOpen} onOpenChange={setRecurringOpen}>
