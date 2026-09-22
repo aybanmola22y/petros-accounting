@@ -61,16 +61,27 @@ function invoiceTotals(values: PrintInvoiceInput) {
   const shipping = values.shippingEnabled ? (values.shippingAmount ?? 0) : 0;
   const invoiceTotal = Math.max(0, subtotal - discount + shipping);
 
-  const isPaid = values.status === "paid";
-  const balanceDue = isPaid
-    ? 0
-    : values.balanceDueOverride != null
-      ? Math.max(0, values.balanceDueOverride)
-      : Math.max(0, invoiceTotal - (values.depositEnabled ? (values.depositAmount ?? 0) : 0));
-  const amountPaid =
-    values.amountPaid != null ? values.amountPaid : Math.max(0, invoiceTotal - balanceDue);
+  const balanceDue =
+    values.status === "paid"
+      ? 0
+      : values.balanceDueOverride != null
+        ? Math.max(0, values.balanceDueOverride)
+        : Math.max(0, invoiceTotal - (values.depositEnabled ? (values.depositAmount ?? 0) : 0));
 
-  return { subtotal, discount, shipping, invoiceTotal, balanceDue, amountPaid };
+  const amountPaid =
+    values.amountPaid != null
+      ? Math.max(0, values.amountPaid)
+      : Math.max(0, invoiceTotal - balanceDue);
+
+  const resolvedStatus: InvoicePrintStatus | undefined =
+    values.status ??
+    (balanceDue <= 0 && amountPaid > 0
+      ? "paid"
+      : balanceDue > 0 && amountPaid > 0
+        ? "partial"
+        : undefined);
+
+  return { subtotal, discount, shipping, invoiceTotal, balanceDue, amountPaid, resolvedStatus };
 }
 
 function statusStamp(status: InvoicePrintStatus | undefined): string {
@@ -251,7 +262,7 @@ function companyHeaderHtml(): string {
 }
 
 function buildInvoiceBodyHtml(values: PrintInvoiceInput): string {
-  const { subtotal, discount, shipping, invoiceTotal, balanceDue, amountPaid } =
+  const { subtotal, discount, shipping, invoiceTotal, balanceDue, amountPaid, resolvedStatus } =
     invoiceTotals(values);
 
   const linesHtml = values.lines
@@ -271,6 +282,11 @@ function buildInvoiceBodyHtml(values: PrintInvoiceInput): string {
       </tr>`;
     })
     .join("");
+
+  const termsLabel =
+    resolvedStatus === "paid" && (!values.terms || /due on receipt/i.test(values.terms))
+      ? "Paid"
+      : values.terms;
 
   return `
     <div class="sheet">
@@ -295,7 +311,7 @@ function buildInvoiceBodyHtml(values: PrintInvoiceInput): string {
           <table class="facts">
             <tr><td>Invoice date</td><td>${escapeHtml(values.invoiceDate)}</td></tr>
             <tr><td>Due date</td><td>${escapeHtml(values.dueDate)}</td></tr>
-            <tr><td>Terms</td><td>${escapeHtml(values.terms)}</td></tr>
+            <tr><td>Terms</td><td>${escapeHtml(termsLabel)}</td></tr>
           </table>
         </div>
 
@@ -313,7 +329,7 @@ function buildInvoiceBodyHtml(values: PrintInvoiceInput): string {
         </table>
 
         <div class="totals">
-          ${statusStamp(values.status)}
+          ${statusStamp(resolvedStatus)}
           <div class="totals-inner">
             <div class="row muted"><span>Subtotal</span><span>${formatPHP(subtotal)}</span></div>
             ${values.discountEnabled ? `<div class="row muted"><span>Discount (${values.discountPercent ?? 0}%)</span><span>-${formatPHP(discount)}</span></div>` : ""}

@@ -25,13 +25,20 @@ import {
   getServerReceivablesSnapshot,
   getSuppliersSnapshot,
   subscribeMockStore,
+  type InvoiceViewRow,
+  type MockCustomer,
+  type MockSupplier,
 } from "@/lib/mock-data";
+
+const EMPTY_INVOICES: InvoiceViewRow[] = [];
+const EMPTY_CUSTOMERS: MockCustomer[] = [];
+const EMPTY_SUPPLIERS: MockSupplier[] = [];
 
 function useSearchData() {
   const invoices = useSyncExternalStore(
     subscribeMockStore,
     getDisplayInvoicesSnapshot,
-    () => [],
+    () => EMPTY_INVOICES,
   );
   const receivables = useSyncExternalStore(
     subscribeMockStore,
@@ -41,12 +48,12 @@ function useSearchData() {
   const customers = useSyncExternalStore(
     subscribeMockStore,
     getCustomersSnapshot,
-    () => [],
+    () => EMPTY_CUSTOMERS,
   );
   const suppliers = useSyncExternalStore(
     subscribeMockStore,
     getSuppliersSnapshot,
-    () => [],
+    () => EMPTY_SUPPLIERS,
   );
   return {
     invoices,

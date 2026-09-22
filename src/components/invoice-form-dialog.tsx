@@ -676,7 +676,24 @@ export function InvoiceFormDialog({
   const discountAmount = form.discountEnabled ? (subtotal * form.discountPercent) / 100 : 0;
   const shippingAmount = form.shippingEnabled ? form.shippingAmount : 0;
   const invoiceTotal = Math.max(0, subtotal - discountAmount + shippingAmount);
-  const balanceDue = Math.max(0, invoiceTotal - (form.depositEnabled ? form.depositAmount : 0));
+  const formBalanceDue = Math.max(0, invoiceTotal - (form.depositEnabled ? form.depositAmount : 0));
+  const balanceDue =
+    editingInvoice != null ? Math.max(0, editingInvoice.balanceDue) : formBalanceDue;
+  const amountPaidOnInvoice =
+    editingInvoice != null
+      ? Math.max(0, editingInvoice.amount - editingInvoice.balanceDue)
+      : Math.max(0, invoiceTotal - formBalanceDue);
+  const printStatus = useMemo(() => {
+    if (!editingInvoice) {
+      if (balanceDue <= 0 && amountPaidOnInvoice > 0) return "paid" as const;
+      return undefined;
+    }
+    if (editingInvoice.voided) return "void" as const;
+    if (editingInvoice.kind === "paid" || editingInvoice.balanceDue <= 0) return "paid" as const;
+    if (editingInvoice.kind === "partial") return "partial" as const;
+    if (editingInvoice.kind === "overdue") return "overdue" as const;
+    return "open" as const;
+  }, [editingInvoice, balanceDue, amountPaidOnInvoice]);
 
   const sendInvoicePayload = useMemo((): SendInvoicePayload | null => {
     if (!form.customerId && !form.number) return null;
@@ -900,7 +917,9 @@ export function InvoiceFormDialog({
       shippingAmount: form.shippingAmount,
       depositEnabled: form.depositEnabled,
       depositAmount: form.depositAmount,
+      status: printStatus,
       balanceDueOverride: balanceDue,
+      amountPaid: amountPaidOnInvoice,
     };
   }
 
