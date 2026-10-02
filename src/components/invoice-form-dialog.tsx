@@ -1161,12 +1161,12 @@ export function InvoiceFormDialog({
           </div>
         </DialogHeader>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           <fieldset
             disabled={readOnly}
-            className="contents min-w-0 border-0 p-0 m-0"
+            className="flex min-h-0 min-w-0 flex-1 border-0 p-0 m-0"
           >
-          <div className="flex-1 min-w-0 overflow-y-auto px-5 pt-4 pb-10 space-y-5">
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-5 pt-4 pb-6 space-y-5">
             <div className="flex items-start justify-between gap-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Invoice</p>
               <div className="text-right">
@@ -1768,7 +1768,7 @@ export function InvoiceFormDialog({
         </div>
 
         {readOnly ? (
-          <div className="shrink-0 border-t bg-background px-6 py-3 flex items-center justify-end gap-2">
+          <div className="relative z-20 shrink-0 border-t bg-background px-6 py-3 flex items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={handlePrintInvoice}>
               Print
             </Button>
@@ -1777,7 +1777,7 @@ export function InvoiceFormDialog({
             </Button>
           </div>
         ) : (
-        <div className="shrink-0 border-t bg-background px-6 py-3 grid grid-cols-3 items-center gap-4">
+        <div className="relative z-20 shrink-0 border-t bg-background px-6 py-3 grid grid-cols-3 items-center gap-4">
           <div />
           <div className="flex items-center justify-center gap-2">
             <SplitActionButton

@@ -33,6 +33,7 @@ const COMPANY = {
   ],
   email: "admin@petrosphere.com.ph",
   website: "www.petrosphere.com.ph",
+  tin: "008-565-472-000",
 };
 
 const BRAND = "#0f2350"; // navy (primary)
@@ -254,6 +255,7 @@ function companyHeaderHtml(): string {
         <div class="brand-name">${escapeHtml(COMPANY.name)}</div>
         <div class="brand-meta">
           ${COMPANY.addressLines.map((l) => escapeHtml(l)).join("<br>")}<br>
+          TIN ${escapeHtml(COMPANY.tin)}<br>
           <a href="mailto:${escapeHtml(COMPANY.email)}">${escapeHtml(COMPANY.email)}</a> ·
           <a href="https://${escapeHtml(COMPANY.website)}">${escapeHtml(COMPANY.website)}</a>
         </div>
